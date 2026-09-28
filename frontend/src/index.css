@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+/* Tokens visuales: único lugar donde se definen colores, radios y fuentes */
+@theme {
+  --color-bg: #0a1224;
+  --color-surface: #101b33;
+  --color-line: #1e2d4d;
+  --color-fg: #e6edf7;
+  --color-muted: #8a9bb8;
+  --color-brand: #2dd4bf;
+  --color-accent: #3b82f6;
+  --color-danger: #f87171;
+  --radius-card: 1rem;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+body { background: var(--color-bg); color: var(--color-fg); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }

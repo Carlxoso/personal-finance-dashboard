@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TxType {
+  INCOME
+  EXPENSE
+  TRANSFER
+  SAVING
+}
+
+enum CategoryKind {
+  INCOME
+  EXPENSE
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  accounts     Account[]
+  categories   Category[]
+  goals        Goal[]
+  transactions Transaction[]
+}
+
+model Account {
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  type           String
+  currency       String        @default("USD")
+  initialBalance Decimal       @default(0) @db.Decimal(14, 2)
+  active         Boolean       @default(true)
+  outgoing       Transaction[] @relation("source")
+  incoming       Transaction[] @relation("destination")
+
+  @@unique([userId, name])
+}
+
+model Category {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  kind         CategoryKind
+  transactions Transaction[]
+
+  @@unique([userId, kind, name])
+}
+
+model Goal {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  target       Decimal       @db.Decimal(14, 2)
+  targetDate   DateTime?
+  description  String?
+  status       GoalStatus    @default(ACTIVE)
+  transactions Transaction[]
+}
+
+model Transaction {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        TxType
+  amount      Decimal   @db.Decimal(14, 2)
+  description String
+  notes       String?
+  date        DateTime
+  accountId   String
+  account     Account   @relation("source", fields: [accountId], references: [id])
+  toAccountId String?
+  toAccount   Account? @relation("destination", fields: [toAccountId], references: [id])
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  goalId      String?
+  goal        Goal?     @relation(fields: [goalId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, date])
+}
