@@ -5,6 +5,7 @@ import Accounts from './pages/Accounts';
 import Dashboard from './pages/Dashboard';
 import Goals from './pages/Goals';
 import Login from './pages/Login';
+import Statistics from './pages/Statistics';
 import Transactions from './pages/Transactions';
 import type { User } from './types';
 
@@ -25,6 +26,7 @@ export default function App() {
         {section === 'expenses' && <Transactions key="expenses" type="EXPENSE" title="Gastos" />}
         {section === 'savings' && <Transactions key="savings" type="SAVING" title="Ahorros" />}
         {section === 'goals' && <Goals />}
+        {section === 'stats' && <Statistics />}
         {section === 'history' && <Transactions key="history" title="Historial" />}
       </main>
     </>

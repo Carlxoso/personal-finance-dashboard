@@ -10,7 +10,7 @@ export const NAV = [
   { id: 'savings', label: 'Ahorros', icon: PiggyBank, ready: true },
   { id: 'goals', label: 'Metas', icon: Target, ready: true },
   { id: 'history', label: 'Historial', icon: History, ready: true },
-  { id: 'stats', label: 'Estadísticas', icon: BarChart3, ready: false },
+  { id: 'stats', label: 'Estadísticas', icon: BarChart3, ready: true },
   { id: 'reports', label: 'Reportes', icon: FileText, ready: false },
   { id: 'settings', label: 'Configuración', icon: Settings, ready: false },
 ] as const;

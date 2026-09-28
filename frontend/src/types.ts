@@ -17,3 +17,4 @@ export interface Goal {
   id: string; name: string; target: string; current: string; remaining: string;
   percent: string; monthlyNeeded: string | null; targetDate: string | null;
 }
+export interface MonthPoint { month: string; income: string; expense: string; saving: string; balance: string }

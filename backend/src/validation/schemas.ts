@@ -35,3 +35,5 @@ export const goalInput = z.object({
   name: z.string().trim().min(1).max(80), target: amount,
   targetDate: z.coerce.date().optional(), description: z.string().max(300).optional(),
 });
+
+export const monthsQuery = z.object({ months: z.coerce.number().int().min(1).max(24).default(6) });

@@ -6,10 +6,10 @@ import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middleware/auth.js';
 import * as auth from '../services/auth.service.js';
 import { accountBalances } from '../services/balance.service.js';
-import { periodSummary } from '../services/statistics.service.js';
+import { monthlySeries, periodSummary } from '../services/statistics.service.js';
 import * as goals from '../services/goal.service.js';
 import * as tx from '../services/transaction.service.js';
-import { accountInput, credentials, goalInput, idParam, periodQuery, txInput, txQuery } from '../validation/schemas.js';
+import { accountInput, credentials, goalInput, idParam, monthsQuery, periodQuery, txInput, txQuery } from '../validation/schemas.js';
 
 const api = Router();
 // Cookie HttpOnly + SameSite=Strict + CORS restringido cubren CSRF.
@@ -56,5 +56,6 @@ api.get('/statistics/summary', async (req, res) => {
   const { from, to } = periodQuery.parse(req.query);
   res.json(await periodSummary(req.userId, from, to));
 });
+api.get('/statistics/monthly', async (req, res) => { res.json(await monthlySeries(req.userId, monthsQuery.parse(req.query).months)); });
 
 export default api;

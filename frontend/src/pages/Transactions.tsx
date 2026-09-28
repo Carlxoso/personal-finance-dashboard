@@ -1,13 +1,11 @@
-import { Trash2 } from 'lucide-react';
+import { LABELS, TransactionItem } from '../components/TransactionItem';
 import { useState, type FormEvent } from 'react';
 import { Field, inputClass, primaryButton } from '../components/Field';
 import { Card, EmptyState } from '../components/ui';
 import { useLoad } from '../hooks/useLoad';
 import { api } from '../lib/api';
-import { formatMoney } from '../lib/format';
 import type { Account, Category, Goal, Page, Transaction, TxType } from '../types';
 
-const LABELS: Record<TxType, string> = { INCOME: 'Ingreso', EXPENSE: 'Gasto', TRANSFER: 'Transferencia', SAVING: 'Ahorro' };
 const FORM_TYPES: TxType[] = ['INCOME', 'EXPENSE', 'TRANSFER', 'SAVING'];
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -75,18 +73,7 @@ export default function Transactions({ type: fixed, title }: { type?: 'INCOME' |
         {list.data?.items.length === 0 ? <EmptyState title="Sin movimientos todavía" hint="Registra el primero con el formulario de arriba." /> : (
           <ul className="divide-y divide-line">
             {list.data?.items.map((t) => (
-              <li key={t.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{t.description}</p>
-                  <p className="text-sm text-muted">{[LABELS[t.type], t.category?.name, t.toAccount ? `${t.account.name} → ${t.toAccount.name}` : t.account.name, new Date(t.date).toLocaleDateString('es-EC')].filter(Boolean).join(' · ')}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`tabular-nums ${t.type === 'INCOME' || t.type === 'SAVING' ? 'text-brand' : t.type === 'EXPENSE' ? 'text-danger' : ''}`}>
-                    {t.type === 'INCOME' ? '+' : t.type === 'EXPENSE' ? '−' : ''}{formatMoney(t.amount)}
-                  </span>
-                  <button onClick={() => remove(t.id)} aria-label={`Eliminar ${t.description}`} className="text-muted hover:text-danger"><Trash2 size={16} aria-hidden /></button>
-                </div>
-              </li>
+              <TransactionItem key={t.id} t={t} onDelete={remove} />
             ))}
           </ul>
         )}
