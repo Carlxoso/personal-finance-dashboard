@@ -1,20 +1,29 @@
 import { useEffect, useState } from 'react';
-import { Sidebar } from './components/Sidebar';
+import { Sidebar, type SectionId } from './components/Sidebar';
 import { api } from './lib/api';
+import Accounts from './pages/Accounts';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
+import Transactions from './pages/Transactions';
 import type { User } from './types';
 
 export default function App() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
+  const [section, setSection] = useState<SectionId>('dashboard');
   useEffect(() => { api<User>('/auth/me').then(setUser, () => setUser(null)); }, []);
 
   if (user === undefined) return null;
   if (!user) return <Login onDone={setUser} />;
   return (
     <>
-      <Sidebar active="dashboard" onLogout={() => api('/auth/logout', { method: 'POST' }).finally(() => setUser(null))} />
-      <main className="p-4 pt-16 md:ml-60 md:p-8"><Dashboard /></main>
+      <Sidebar active={section} onSelect={setSection} onLogout={() => api('/auth/logout', { method: 'POST' }).finally(() => setUser(null))} />
+      <main className="p-4 pt-16 md:ml-60 md:p-8">
+        {section === 'dashboard' && <Dashboard />}
+        {section === 'accounts' && <Accounts />}
+        {section === 'income' && <Transactions key="income" type="INCOME" title="Ingresos" />}
+        {section === 'expenses' && <Transactions key="expenses" type="EXPENSE" title="Gastos" />}
+        {section === 'history' && <Transactions key="history" title="Historial" />}
+      </main>
     </>
   );
 }

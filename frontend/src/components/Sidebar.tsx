@@ -1,20 +1,23 @@
-import { BarChart3, FileText, History, LayoutDashboard, PiggyBank, Settings, Target, TrendingDown, TrendingUp } from 'lucide-react';
+import { BarChart3, FileText, History, Landmark, LayoutDashboard, PiggyBank, Settings, Target, TrendingDown, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 
 // Agregar una sección = agregar una entrada; `ready` marca las ya implementadas.
 export const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, ready: true },
-  { id: 'income', label: 'Ingresos', icon: TrendingUp, ready: false },
-  { id: 'expenses', label: 'Gastos', icon: TrendingDown, ready: false },
+  { id: 'accounts', label: 'Cuentas', icon: Landmark, ready: true },
+  { id: 'income', label: 'Ingresos', icon: TrendingUp, ready: true },
+  { id: 'expenses', label: 'Gastos', icon: TrendingDown, ready: true },
   { id: 'savings', label: 'Ahorros', icon: PiggyBank, ready: false },
   { id: 'goals', label: 'Metas', icon: Target, ready: false },
-  { id: 'history', label: 'Historial', icon: History, ready: false },
+  { id: 'history', label: 'Historial', icon: History, ready: true },
   { id: 'stats', label: 'Estadísticas', icon: BarChart3, ready: false },
   { id: 'reports', label: 'Reportes', icon: FileText, ready: false },
   { id: 'settings', label: 'Configuración', icon: Settings, ready: false },
 ] as const;
 
-export function Sidebar({ active, onLogout }: { active: string; onLogout: () => void }) {
+export type SectionId = (typeof NAV)[number]['id'];
+
+export function Sidebar({ active, onSelect, onLogout }: { active: SectionId; onSelect: (id: SectionId) => void; onLogout: () => void }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -23,7 +26,7 @@ export function Sidebar({ active, onLogout }: { active: string; onLogout: () => 
         <p className="mb-6 mt-12 px-2 text-lg font-semibold md:mt-2">Finanzas</p>
         <nav aria-label="Principal" className="flex flex-1 flex-col gap-1">
           {NAV.map(({ id, label, icon: Icon, ready }) => (
-            <button key={id} disabled={!ready} aria-current={id === active ? 'page' : undefined}
+            <button key={id} disabled={!ready} aria-current={id === active ? 'page' : undefined} onClick={() => { onSelect(id); setOpen(false); }}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40 ${id === active ? 'bg-brand/10 text-brand' : 'text-muted hover:text-fg'}`}>
               <Icon size={18} aria-hidden />{label}
             </button>

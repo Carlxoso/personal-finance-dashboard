@@ -1,0 +1,3 @@
+{ "name": "personal-finance-dashboard", "private": true,
+  "scripts": { "dev": "concurrently -n api,web \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"" },
+  "devDependencies": { "concurrently": "^9.0.0" } }
