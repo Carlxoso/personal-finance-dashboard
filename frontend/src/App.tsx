@@ -3,6 +3,7 @@ import { Sidebar, type SectionId } from './components/Sidebar';
 import { api } from './lib/api';
 import Accounts from './pages/Accounts';
 import Dashboard from './pages/Dashboard';
+import Goals from './pages/Goals';
 import Login from './pages/Login';
 import Transactions from './pages/Transactions';
 import type { User } from './types';
@@ -22,6 +23,8 @@ export default function App() {
         {section === 'accounts' && <Accounts />}
         {section === 'income' && <Transactions key="income" type="INCOME" title="Ingresos" />}
         {section === 'expenses' && <Transactions key="expenses" type="EXPENSE" title="Gastos" />}
+        {section === 'savings' && <Transactions key="savings" type="SAVING" title="Ahorros" />}
+        {section === 'goals' && <Goals />}
         {section === 'history' && <Transactions key="history" title="Historial" />}
       </main>
     </>

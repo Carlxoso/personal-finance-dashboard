@@ -5,16 +5,17 @@ import { Card, EmptyState } from '../components/ui';
 import { useLoad } from '../hooks/useLoad';
 import { api } from '../lib/api';
 import { formatMoney } from '../lib/format';
-import type { Account, Category, Page, Transaction, TxType } from '../types';
+import type { Account, Category, Goal, Page, Transaction, TxType } from '../types';
 
 const LABELS: Record<TxType, string> = { INCOME: 'Ingreso', EXPENSE: 'Gasto', TRANSFER: 'Transferencia', SAVING: 'Ahorro' };
-const FORM_TYPES: TxType[] = ['INCOME', 'EXPENSE', 'TRANSFER']; // SAVING llega con Metas
+const FORM_TYPES: TxType[] = ['INCOME', 'EXPENSE', 'TRANSFER', 'SAVING'];
 const today = () => new Date().toISOString().slice(0, 10);
 
-export default function Transactions({ type: fixed, title }: { type?: 'INCOME' | 'EXPENSE'; title: string }) {
+export default function Transactions({ type: fixed, title }: { type?: 'INCOME' | 'EXPENSE' | 'SAVING'; title: string }) {
   const list = useLoad<Page<Transaction>>(`/transactions?pageSize=50${fixed ? `&type=${fixed}` : ''}`);
   const accounts = useLoad<Account[]>('/accounts').data;
   const categories = useLoad<Category[]>('/categories').data;
+  const goals = useLoad<Goal[]>('/goals').data;
   const [type, setType] = useState<TxType>(fixed ?? 'EXPENSE');
   const [formError, setFormError] = useState('');
 
@@ -28,7 +29,8 @@ export default function Transactions({ type: fixed, title }: { type?: 'INCOME' |
         type, amount: f.get('amount'), description: f.get('description'), notes: opt('notes'),
         date: new Date(`${f.get('date')}T12:00:00`).toISOString(),
         accountId: f.get('accountId'), toAccountId: type === 'TRANSFER' ? opt('toAccountId') : undefined,
-        categoryId: type === 'TRANSFER' ? undefined : opt('categoryId'),
+        categoryId: type === 'TRANSFER' || type === 'SAVING' ? undefined : opt('categoryId'),
+        goalId: type === 'SAVING' ? opt('goalId') : undefined,
       } });
       form.reset(); setFormError(''); list.reload();
     } catch (err) { setFormError((err as Error).message); }
@@ -58,6 +60,8 @@ export default function Transactions({ type: fixed, title }: { type?: 'INCOME' |
             <select name="accountId" required className={inputClass}>{accounts?.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></Field>
           {type === 'TRANSFER' ? (
             <Field label="Cuenta de destino"><select name="toAccountId" required className={inputClass}>{accounts?.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></Field>
+          ) : type === 'SAVING' ? (
+            <Field label="Meta"><select name="goalId" required className={inputClass}>{goals?.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select></Field>
           ) : (
             <Field label="Categoría"><select name="categoryId" required className={inputClass}>{kindCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
           )}
@@ -77,7 +81,7 @@ export default function Transactions({ type: fixed, title }: { type?: 'INCOME' |
                   <p className="text-sm text-muted">{[LABELS[t.type], t.category?.name, t.toAccount ? `${t.account.name} → ${t.toAccount.name}` : t.account.name, new Date(t.date).toLocaleDateString('es-EC')].filter(Boolean).join(' · ')}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={`tabular-nums ${t.type === 'INCOME' ? 'text-brand' : t.type === 'EXPENSE' ? 'text-danger' : ''}`}>
+                  <span className={`tabular-nums ${t.type === 'INCOME' || t.type === 'SAVING' ? 'text-brand' : t.type === 'EXPENSE' ? 'text-danger' : ''}`}>
                     {t.type === 'INCOME' ? '+' : t.type === 'EXPENSE' ? '−' : ''}{formatMoney(t.amount)}
                   </span>
                   <button onClick={() => remove(t.id)} aria-label={`Eliminar ${t.description}`} className="text-muted hover:text-danger"><Trash2 size={16} aria-hidden /></button>

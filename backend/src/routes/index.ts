@@ -7,8 +7,9 @@ import { requireAuth } from '../middleware/auth.js';
 import * as auth from '../services/auth.service.js';
 import { accountBalances } from '../services/balance.service.js';
 import { periodSummary } from '../services/statistics.service.js';
+import * as goals from '../services/goal.service.js';
 import * as tx from '../services/transaction.service.js';
-import { accountInput, credentials, idParam, periodQuery, txInput, txQuery } from '../validation/schemas.js';
+import { accountInput, credentials, goalInput, idParam, periodQuery, txInput, txQuery } from '../validation/schemas.js';
 
 const api = Router();
 // Cookie HttpOnly + SameSite=Strict + CORS restringido cubren CSRF.
@@ -47,6 +48,9 @@ api.put('/transactions/:id', async (req, res) => {
   res.json(await tx.updateTransaction(req.userId, idParam.parse(req.params).id, txInput.parse(req.body)));
 });
 api.delete('/transactions/:id', async (req, res) => { await tx.deleteTransaction(req.userId, idParam.parse(req.params).id); res.status(204).end(); });
+
+api.get('/goals', async (req, res) => { res.json(await goals.listGoals(req.userId)); });
+api.post('/goals', async (req, res) => { res.status(201).json(await goals.createGoal(req.userId, goalInput.parse(req.body))); });
 
 api.get('/statistics/summary', async (req, res) => {
   const { from, to } = periodQuery.parse(req.query);

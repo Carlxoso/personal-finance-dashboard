@@ -30,3 +30,8 @@ export const txQuery = z.object({
 
 export const periodQuery = z.object({ from: z.coerce.date(), to: z.coerce.date() });
 export const idParam = z.object({ id });
+
+export const goalInput = z.object({
+  name: z.string().trim().min(1).max(80), target: amount,
+  targetDate: z.coerce.date().optional(), description: z.string().max(300).optional(),
+});

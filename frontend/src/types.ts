@@ -13,3 +13,7 @@ export interface Transaction {
   account: { name: string }; toAccount: { name: string } | null; category: { name: string } | null;
 }
 export interface Page<T> { items: T[]; total: number }
+export interface Goal {
+  id: string; name: string; target: string; current: string; remaining: string;
+  percent: string; monthlyNeeded: string | null; targetDate: string | null;
+}
