@@ -12,7 +12,7 @@ export const NAV = [
   { id: 'history', label: 'Historial', icon: History, ready: true },
   { id: 'stats', label: 'Estadísticas', icon: BarChart3, ready: true },
   { id: 'reports', label: 'Reportes', icon: FileText, ready: true },
-  { id: 'settings', label: 'Configuración', icon: Settings, ready: false },
+  { id: 'settings', label: 'Configuración', icon: Settings, ready: true },
 ] as const;
 
 export type SectionId = (typeof NAV)[number]['id'];

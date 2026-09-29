@@ -1,5 +1,6 @@
 import { PiggyBank, Scale, TrendingDown, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { primaryButton } from '../components/Field';
 import { PeriodSelect } from '../components/PeriodSelect';
 import { TransactionItem } from '../components/TransactionItem';
 import { Card, EmptyState, StatCard } from '../components/ui';
@@ -17,14 +18,28 @@ export default function Reports() {
   const s = summary.data;
   const net = s ? ((cents(s.income) - cents(s.expense)) / 100).toFixed(2) : '0';
   const totalExpense = s ? cents(s.expense) : 0;
+  const [exportError, setExportError] = useState('');
+
+  async function exportCsv() {
+    setExportError('');
+    const res = await fetch(`/api/transactions/export?${range}`, { credentials: 'include' });
+    if (!res.ok) return setExportError('No se pudo exportar el reporte');
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement('a');
+    a.href = url; a.download = `reporte-${period}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Reportes</h1>
-        <PeriodSelect value={period} onChange={setPeriod} />
+        <div className="flex items-center gap-3">
+          <PeriodSelect value={period} onChange={setPeriod} />
+          <button onClick={exportCsv} className={primaryButton}>Exportar CSV</button>
+        </div>
       </header>
-      {summary.error && <p role="alert" className="text-danger">{summary.error}</p>}
+      {(summary.error || exportError) && <p role="alert" className="text-danger">{summary.error || exportError}</p>}
       {s && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

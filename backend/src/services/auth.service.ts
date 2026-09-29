@@ -25,3 +25,9 @@ export async function login(email: string, password: string) {
 }
 
 export const signToken = (userId: string) => jwt.sign({}, env.JWT_SECRET, { subject: userId, expiresIn: '7d' });
+
+export async function changePassword(userId: string, current: string, next: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || !(await argon2.verify(user.passwordHash, current))) throw new AppError(400, 'WRONG_PASSWORD', 'La contraseña actual no es correcta');
+  await prisma.user.update({ where: { id: userId }, data: { passwordHash: await argon2.hash(next) } });
+}

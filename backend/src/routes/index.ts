@@ -8,9 +8,10 @@ import { deleteAccount } from '../services/account.service.js';
 import * as auth from '../services/auth.service.js';
 import { accountBalances } from '../services/balance.service.js';
 import { monthlySeries, periodSummary } from '../services/statistics.service.js';
+import * as categories from '../services/category.service.js';
 import * as goals from '../services/goal.service.js';
 import * as tx from '../services/transaction.service.js';
-import { accountInput, credentials, goalInput, idParam, monthsQuery, periodQuery, txInput, txQuery } from '../validation/schemas.js';
+import { accountInput, categoryInput, credentials, goalInput, idParam, monthsQuery, passwordInput, periodQuery, txInput, txQuery } from '../validation/schemas.js';
 
 const api = Router();
 // Cookie HttpOnly + SameSite=Strict + CORS restringido cubren CSRF.
@@ -44,6 +45,18 @@ api.post('/accounts', async (req, res) => {
 api.delete('/accounts/:id', async (req, res) => { await deleteAccount(req.userId, idParam.parse(req.params).id); res.status(204).end(); });
 api.get('/categories', async (req, res) => { res.json(await prisma.category.findMany({ where: { userId: req.userId }, orderBy: { name: 'asc' } })); });
 
+api.post('/auth/password', authLimit, async (req, res) => {
+  const { current, next } = passwordInput.parse(req.body);
+  await auth.changePassword(req.userId, current, next);
+  res.status(204).end();
+});
+api.post('/categories', async (req, res) => { res.status(201).json(await categories.createCategory(req.userId, categoryInput.parse(req.body))); });
+api.delete('/categories/:id', async (req, res) => { await categories.deleteCategory(req.userId, idParam.parse(req.params).id); res.status(204).end(); });
+
+api.get('/transactions/export', async (req, res) => {
+  const { from, to } = periodQuery.parse(req.query);
+  res.type('text/csv').attachment('reporte.csv').send(await tx.exportCsv(req.userId, from, to));
+});
 api.get('/transactions', async (req, res) => { res.json(await tx.listTransactions(req.userId, txQuery.parse(req.query))); });
 api.post('/transactions', async (req, res) => { res.status(201).json(await tx.createTransaction(req.userId, txInput.parse(req.body))); });
 api.put('/transactions/:id', async (req, res) => {
