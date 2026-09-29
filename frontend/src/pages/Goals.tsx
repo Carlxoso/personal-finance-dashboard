@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { DeleteButton } from '../components/DeleteButton';
 import { Field, inputClass, primaryButton } from '../components/Field';
 import { Card, EmptyState, ProgressBar } from '../components/ui';
 import { useLoad } from '../hooks/useLoad';
@@ -21,6 +22,12 @@ export default function Goals() {
     } catch (err) { setFormError((err as Error).message); }
   }
 
+  async function remove(id: string) {
+    if (!confirm('¿Eliminar esta meta?')) return;
+    try { await api(`/goals/${id}`, { method: 'DELETE' }); setFormError(''); reload(); }
+    catch (err) { setFormError((err as Error).message); }
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Metas</h1>
@@ -38,7 +45,7 @@ export default function Goals() {
       <div className="grid gap-4 lg:grid-cols-2">
         {data?.map((g) => (
           <Card key={g.id} className="space-y-3">
-            <div className="flex items-baseline justify-between"><h2 className="font-medium">{g.name}</h2><span className="text-brand tabular-nums">{g.percent}%</span></div>
+            <div className="flex items-baseline justify-between"><h2 className="font-medium">{g.name}</h2><span className="flex items-center gap-3"><span className="text-brand tabular-nums">{g.percent}%</span><DeleteButton label={g.name} onClick={() => remove(g.id)} /></span></div>
             <ProgressBar value={Number(g.percent)} label={g.name} />
             <p className="text-sm text-muted tabular-nums">{formatMoney(g.current)} / {formatMoney(g.target)} · Faltan {formatMoney(g.remaining)}</p>
             {g.monthlyNeeded && <p className="text-sm text-muted">Para llegar a la fecha, necesitarías ahorrar aprox. {formatMoney(g.monthlyNeeded)} al mes.</p>}

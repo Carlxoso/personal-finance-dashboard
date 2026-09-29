@@ -1,10 +1,11 @@
 import { PiggyBank, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { MonthlyCharts, toChartPoints } from '../components/MonthlyCharts';
+import { PeriodSelect } from '../components/PeriodSelect';
 import { TransactionItem } from '../components/TransactionItem';
 import { Card, EmptyState, ProgressBar, StatCard } from '../components/ui';
 import { useLoad } from '../hooks/useLoad';
-import { PERIODS, formatMoney, rangeFor, type PeriodKey } from '../lib/format';
+import { formatMoney, rangeFor, type PeriodKey } from '../lib/format';
 import type { Goal, MonthPoint, Page, PeriodSummary, Transaction } from '../types';
 
 // Meses que abarcan los gráficos según el período elegido.
@@ -27,9 +28,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <select aria-label="Período" value={period} onChange={(e) => setPeriod(e.target.value as PeriodKey)} className="rounded-lg border border-line bg-surface px-3 py-2 text-sm">
-          {PERIODS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-        </select>
+        <PeriodSelect value={period} onChange={setPeriod} />
       </header>
       {summary.error && <p role="alert" className="text-danger">{summary.error}</p>}
       {!data && !summary.error && <p className="text-muted">Cargando…</p>}

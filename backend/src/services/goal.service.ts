@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import type { z } from 'zod';
+import { AppError, notFound } from '../lib/errors.js';
 import { money } from '../lib/money.js';
 import { prisma } from '../lib/prisma.js';
 import type { goalInput } from '../validation/schemas.js';
@@ -23,3 +24,10 @@ export async function listGoals(userId: string) {
 }
 
 export const createGoal = (userId: string, d: z.infer<typeof goalInput>) => prisma.goal.create({ data: { ...d, userId } });
+
+/** Solo se puede eliminar una meta sin aportes. */
+export async function deleteGoal(userId: string, id: string) {
+  if (!(await prisma.goal.count({ where: { id, userId } }))) throw notFound();
+  if (await prisma.transaction.count({ where: { userId, goalId: id } })) throw new AppError(409, 'HAS_TRANSACTIONS', 'Esta meta tiene aportes. Elimínalos primero desde Ahorros.');
+  await prisma.goal.delete({ where: { id } });
+}

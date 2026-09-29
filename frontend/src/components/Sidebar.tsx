@@ -11,7 +11,7 @@ export const NAV = [
   { id: 'goals', label: 'Metas', icon: Target, ready: true },
   { id: 'history', label: 'Historial', icon: History, ready: true },
   { id: 'stats', label: 'Estadísticas', icon: BarChart3, ready: true },
-  { id: 'reports', label: 'Reportes', icon: FileText, ready: false },
+  { id: 'reports', label: 'Reportes', icon: FileText, ready: true },
   { id: 'settings', label: 'Configuración', icon: Settings, ready: false },
 ] as const;
 
@@ -23,7 +23,7 @@ export function Sidebar({ active, onSelect, onLogout }: { active: SectionId; onS
     <>
       <button className="fixed left-3 top-3 z-30 rounded-lg border border-line bg-surface px-3 py-2 text-sm md:hidden" aria-expanded={open} onClick={() => setOpen(!open)}>Menú</button>
       <aside className={`fixed inset-y-0 left-0 z-20 flex w-60 flex-col border-r border-line bg-surface p-4 transition-transform md:translate-x-0 ${open ? '' : '-translate-x-full'}`}>
-        <p className="mb-6 mt-12 px-2 text-lg font-semibold md:mt-2">Finanzas</p>
+        <div className="mb-6 mt-12 flex items-center gap-3 px-2 md:mt-2"><img src="/logo.png" alt="" className="h-10 w-10" /><p className="text-xl font-semibold">Finanzas</p></div>
         <nav aria-label="Principal" className="flex flex-1 flex-col gap-1">
           {NAV.map(({ id, label, icon: Icon, ready }) => (
             <button key={id} disabled={!ready} aria-current={id === active ? 'page' : undefined} onClick={() => { onSelect(id); setOpen(false); }}

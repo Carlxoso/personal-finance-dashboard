@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react';
-import { Card } from '../components/ui';
+import { Field } from '../components/Field';
 import { api } from '../lib/api';
 import type { User } from '../types';
+
+const input = 'mt-2 w-full rounded-xl border border-line bg-bg px-4 py-3 text-base text-fg placeholder:text-muted';
 
 export default function Login({ onDone }: { onDone: (u: User) => void }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -12,21 +14,22 @@ export default function Login({ onDone }: { onDone: (u: User) => void }) {
     try { onDone(await api<User>(`/auth/${mode}`, { method: 'POST', body: { email: f.get('email'), password: f.get('password') } })); }
     catch (err) { setError((err as Error).message); }
   }
-  const input = 'mt-1 w-full rounded-lg border border-line bg-bg px-3 py-2';
   return (
     <main className="grid min-h-screen place-items-center p-4">
-      <Card className="w-full max-w-sm">
-        <form onSubmit={submit} className="space-y-4">
-          <h1 className="text-xl font-semibold">{mode === 'login' ? 'Inicia sesión' : 'Crea tu cuenta'}</h1>
-          <label className="block text-sm">Correo<input name="email" type="email" required autoComplete="email" className={input} /></label>
-          <label className="block text-sm">Contraseña (mínimo 10 caracteres)<input name="password" type="password" required minLength={10} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} className={input} /></label>
+      <section className="w-full max-w-md rounded-3xl border border-line bg-surface p-8 shadow-2xl shadow-black/30 sm:p-10">
+        <img src="/logo.png" alt="" className="mx-auto h-24 w-24" />
+        <h1 className="mt-4 text-center text-3xl font-semibold">Finanzas</h1>
+        <p className="mt-2 text-center text-muted">{mode === 'login' ? 'Inicia sesión para ver tu dinero' : 'Crea tu cuenta para empezar'}</p>
+        <form onSubmit={submit} className="mt-8 space-y-5">
+          <Field label="Correo"><input name="email" type="email" required autoComplete="email" placeholder="tu@correo.com" className={input} /></Field>
+          <Field label="Contraseña (mínimo 10 caracteres)"><input name="password" type="password" required minLength={10} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} className={input} /></Field>
           {error && <p role="alert" className="text-sm text-danger">{error}</p>}
-          <button className="w-full rounded-lg bg-brand py-2 font-medium text-bg">{mode === 'login' ? 'Entrar' : 'Registrarme'}</button>
-          <button type="button" className="w-full text-sm text-muted" onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}>
-            {mode === 'login' ? 'Crear una cuenta' : 'Ya tengo cuenta'}
-          </button>
+          <button className="w-full rounded-xl bg-brand py-3 text-base font-semibold text-bg transition hover:brightness-110">{mode === 'login' ? 'Entrar' : 'Registrarme'}</button>
         </form>
-      </Card>
+        <button type="button" className="mt-5 w-full text-sm text-muted hover:text-fg" onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}>
+          {mode === 'login' ? 'Crear una cuenta' : 'Ya tengo cuenta'}
+        </button>
+      </section>
     </main>
   );
 }

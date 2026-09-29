@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { DeleteButton } from '../components/DeleteButton';
 import { Field, inputClass, primaryButton } from '../components/Field';
 import { Card, EmptyState } from '../components/ui';
 import { useLoad } from '../hooks/useLoad';
@@ -20,6 +21,12 @@ export default function Accounts() {
     } catch (err) { setFormError((err as Error).message); }
   }
 
+  async function remove(id: string) {
+    if (!confirm('¿Eliminar esta cuenta?')) return;
+    try { await api(`/accounts/${id}`, { method: 'DELETE' }); setFormError(''); reload(); }
+    catch (err) { setFormError((err as Error).message); }
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Cuentas</h1>
@@ -39,7 +46,7 @@ export default function Accounts() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {data?.map((a) => (
           <Card key={a.id}>
-            <p className="text-sm text-muted">{a.type}</p>
+            <div className="flex items-start justify-between"><p className="text-sm text-muted">{a.type}</p><DeleteButton label={a.name} onClick={() => remove(a.id)} /></div>
             <p className="mt-1 font-medium">{a.name}</p>
             <p className={`mt-3 text-2xl font-semibold tabular-nums ${Number(a.balance) < 0 ? 'text-danger' : ''}`}>{formatMoney(a.balance)}</p>
           </Card>

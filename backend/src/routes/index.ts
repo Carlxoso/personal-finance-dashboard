@@ -4,6 +4,7 @@ import { env } from '../config/env.js';
 import { notFound } from '../lib/errors.js';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middleware/auth.js';
+import { deleteAccount } from '../services/account.service.js';
 import * as auth from '../services/auth.service.js';
 import { accountBalances } from '../services/balance.service.js';
 import { monthlySeries, periodSummary } from '../services/statistics.service.js';
@@ -40,6 +41,7 @@ api.get('/accounts', async (req, res) => { res.json(await accountBalances(req.us
 api.post('/accounts', async (req, res) => {
   res.status(201).json(await prisma.account.create({ data: { ...accountInput.parse(req.body), userId: req.userId } }));
 });
+api.delete('/accounts/:id', async (req, res) => { await deleteAccount(req.userId, idParam.parse(req.params).id); res.status(204).end(); });
 api.get('/categories', async (req, res) => { res.json(await prisma.category.findMany({ where: { userId: req.userId }, orderBy: { name: 'asc' } })); });
 
 api.get('/transactions', async (req, res) => { res.json(await tx.listTransactions(req.userId, txQuery.parse(req.query))); });
@@ -51,6 +53,8 @@ api.delete('/transactions/:id', async (req, res) => { await tx.deleteTransaction
 
 api.get('/goals', async (req, res) => { res.json(await goals.listGoals(req.userId)); });
 api.post('/goals', async (req, res) => { res.status(201).json(await goals.createGoal(req.userId, goalInput.parse(req.body))); });
+
+api.delete('/goals/:id', async (req, res) => { await goals.deleteGoal(req.userId, idParam.parse(req.params).id); res.status(204).end(); });
 
 api.get('/statistics/summary', async (req, res) => {
   const { from, to } = periodQuery.parse(req.query);
