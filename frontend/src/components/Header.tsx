@@ -1,4 +1,4 @@
-import { AlertTriangle, Bell, CheckCircle2, LogOut, UserRound } from 'lucide-react';
+import { AlertTriangle, Bell, CheckCircle2, UserRound } from 'lucide-react';
 import { useLoad } from '../hooks/useLoad';
 import type { Notice, Role, User } from '../types';
 import { Dropdown } from './Dropdown';
@@ -7,7 +7,7 @@ import type { SectionId } from './Sidebar';
 export const ROLE_LABEL: Record<Role, string> = { ADMIN: 'Administrador', USER: 'Usuario' };
 const item = 'flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-muted hover:bg-line/40 hover:text-fg';
 
-export function Header({ user, section, onNavigate, onLogout }: { user: User; section: SectionId; onNavigate: (s: SectionId) => void; onLogout: () => void }) {
+export function Header({ user, section, onNavigate }: { user: User; section: SectionId; onNavigate: (s: SectionId) => void }) {
   const notices = useLoad<Notice[]>(`/notifications?k=${section}`).data ?? []; // se recarga al cambiar de sección
   const display = user.name || user.email;
   return (
@@ -37,7 +37,6 @@ export function Header({ user, section, onNavigate, onLogout }: { user: User; se
               <span className="mt-2 inline-block rounded-full bg-brand/15 px-2 py-0.5 text-xs text-brand">{ROLE_LABEL[user.role]}</span>
             </div>
             <button className={item} onClick={() => { onNavigate('profile'); close(); }}><UserRound size={16} aria-hidden />Mi perfil</button>
-            <button className={item} onClick={() => { close(); onLogout(); }}><LogOut size={16} aria-hidden />Cerrar sesión</button>
           </>)}
       </Dropdown>
     </div>

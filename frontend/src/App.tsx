@@ -35,8 +35,8 @@ export default function App() {
   return (
     <FadeIn>
       <Sidebar active={section} role={user.role} onSelect={setSection} onLogout={logout} />
-      <main className="p-4 pt-16 md:ml-60 md:p-8 md:pt-4">
-        <Header user={user} section={section} onNavigate={setSection} onLogout={logout} />
+      <main className="p-4 pt-16 md:ml-64 md:p-8 md:pt-4">
+        <Header user={user} section={section} onNavigate={setSection} />
         {section === 'dashboard' && <Dashboard />}
         {section === 'accounts' && <Accounts />}
         {section === 'income' && <Transactions key="income" type="INCOME" title="Ingresos" />}
