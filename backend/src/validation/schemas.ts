@@ -40,3 +40,6 @@ export const monthsQuery = z.object({ months: z.coerce.number().int().min(1).max
 
 export const passwordInput = z.object({ current: z.string().min(1).max(128), next: z.string().min(10).max(128) });
 export const categoryInput = z.object({ name: z.string().trim().min(1).max(40), kind: z.enum(['INCOME', 'EXPENSE']) });
+
+export const registerInput = credentials.extend({ name: z.string().trim().min(1).max(60) });
+export const profileInput = z.object({ name: z.string().trim().min(1).max(60), email: z.string().email().max(120).toLowerCase() });

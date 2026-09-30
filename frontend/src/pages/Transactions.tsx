@@ -1,3 +1,4 @@
+import { useToast } from '../components/Toast';
 import { LABELS, TransactionItem } from '../components/TransactionItem';
 import { useState, type FormEvent } from 'react';
 import { Field, inputClass, primaryButton } from '../components/Field';
@@ -15,7 +16,7 @@ export default function Transactions({ type: fixed, title }: { type?: 'INCOME' |
   const categories = useLoad<Category[]>('/categories').data;
   const goals = useLoad<Goal[]>('/goals').data;
   const [type, setType] = useState<TxType>(fixed ?? 'EXPENSE');
-  const [formError, setFormError] = useState('');
+  const toast = useToast();
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,14 +31,14 @@ export default function Transactions({ type: fixed, title }: { type?: 'INCOME' |
         categoryId: type === 'TRANSFER' || type === 'SAVING' ? undefined : opt('categoryId'),
         goalId: type === 'SAVING' ? opt('goalId') : undefined,
       } });
-      form.reset(); setFormError(''); list.reload();
-    } catch (err) { setFormError((err as Error).message); }
+      form.reset(); toast.success('Movimiento registrado'); list.reload();
+    } catch (err) { toast.error((err as Error).message); }
   }
 
   async function remove(id: string) {
     if (!confirm('¿Eliminar este movimiento?')) return;
-    await api(`/transactions/${id}`, { method: 'DELETE' });
-    list.reload();
+    try { await api(`/transactions/${id}`, { method: 'DELETE' }); toast.success('Movimiento eliminado'); list.reload(); }
+    catch (err) { toast.error((err as Error).message); }
   }
 
   if (accounts?.length === 0) return <Card><EmptyState title="Primero crea una cuenta" hint="Los movimientos se registran dentro de una cuenta." /></Card>;
@@ -66,7 +67,6 @@ export default function Transactions({ type: fixed, title }: { type?: 'INCOME' |
           <Field label="Notas (opcional)"><input name="notes" maxLength={500} className={inputClass} /></Field>
           <div className="flex items-end"><button className={primaryButton}>Registrar {LABELS[type].toLowerCase()}</button></div>
         </form>
-        {formError && <p role="alert" className="mt-3 text-sm text-danger">{formError}</p>}
       </Card>
       {list.error && <p role="alert" className="text-danger">{list.error}</p>}
       <Card>

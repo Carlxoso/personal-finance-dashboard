@@ -3,7 +3,8 @@ import rateLimit from 'express-rate-limit';
 import { env } from '../config/env.js';
 import { notFound } from '../lib/errors.js';
 import { prisma } from '../lib/prisma.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import * as notifications from '../services/notification.service.js';
 import { deleteAccount } from '../services/account.service.js';
 import * as auth from '../services/auth.service.js';
 import { accountBalances } from '../services/balance.service.js';
@@ -11,7 +12,7 @@ import { monthlySeries, periodSummary } from '../services/statistics.service.js'
 import * as categories from '../services/category.service.js';
 import * as goals from '../services/goal.service.js';
 import * as tx from '../services/transaction.service.js';
-import { accountInput, categoryInput, credentials, goalInput, idParam, monthsQuery, passwordInput, periodQuery, txInput, txQuery } from '../validation/schemas.js';
+import { accountInput, categoryInput, credentials, profileInput, registerInput, goalInput, idParam, monthsQuery, passwordInput, periodQuery, txInput, txQuery } from '../validation/schemas.js';
 
 const api = Router();
 // Cookie HttpOnly + SameSite=Strict + CORS restringido cubren CSRF.
@@ -20,8 +21,8 @@ const setSession = (res: Response, userId: string) =>
 
 const authLimit = rateLimit({ windowMs: 15 * 60_000, limit: 20 });
 api.post('/auth/register', authLimit, async (req, res) => {
-  const { email, password } = credentials.parse(req.body);
-  const user = await auth.register(email, password);
+  const { email, password, name } = registerInput.parse(req.body);
+  const user = await auth.register(email, password, name);
   setSession(res, user.id).status(201).json(user);
 });
 api.post('/auth/login', authLimit, async (req, res) => {
@@ -33,9 +34,15 @@ api.post('/auth/logout', (_req, res) => { res.clearCookie('token').status(204).e
 
 api.use(requireAuth);
 api.get('/auth/me', async (req, res) => {
-  const user = await prisma.user.findUnique({ where: { id: req.userId }, select: { id: true, email: true } });
+  const user = await prisma.user.findUnique({ where: { id: req.userId }, select: { id: true, email: true, name: true, role: true } });
   if (!user) throw notFound();
   res.json(user);
+});
+
+api.patch('/auth/me', async (req, res) => { res.json(await auth.updateProfile(req.userId, profileInput.parse(req.body))); });
+api.get('/notifications', async (req, res) => { res.json(await notifications.listNotifications(req.userId)); });
+api.get('/admin/users', requireRole('ADMIN'), async (_req, res) => {
+  res.json(await prisma.user.findMany({ select: { id: true, email: true, name: true, role: true, createdAt: true }, orderBy: { createdAt: 'asc' } }));
 });
 
 api.get('/accounts', async (req, res) => { res.json(await accountBalances(req.userId)); });

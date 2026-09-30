@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { DeleteButton } from '../components/DeleteButton';
 import { Field, inputClass, primaryButton } from '../components/Field';
+import { useToast } from '../components/Toast';
 import { Card } from '../components/ui';
 import { useLoad } from '../hooks/useLoad';
 import { api } from '../lib/api';
@@ -11,29 +12,28 @@ const KINDS = [['EXPENSE', 'Gastos'], ['INCOME', 'Ingresos']] as const;
 export default function Settings() {
   const me = useLoad<User>('/auth/me').data;
   const cats = useLoad<Category[]>('/categories');
-  const [pwd, setPwd] = useState<{ ok: boolean; msg: string } | null>(null);
-  const [catError, setCatError] = useState('');
+  const toast = useToast();
 
   async function changePassword(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const f = new FormData(form);
-    try { await api('/auth/password', { method: 'POST', body: { current: f.get('current'), next: f.get('next') } }); form.reset(); setPwd({ ok: true, msg: 'Contraseña actualizada' }); }
-    catch (err) { setPwd({ ok: false, msg: (err as Error).message }); }
+    try { await api('/auth/password', { method: 'POST', body: { current: f.get('current'), next: f.get('next') } }); form.reset(); toast.success('Contraseña actualizada'); }
+    catch (err) { toast.error((err as Error).message); }
   }
 
   async function addCategory(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const f = new FormData(form);
-    try { await api('/categories', { method: 'POST', body: { name: f.get('name'), kind: f.get('kind') } }); form.reset(); setCatError(''); cats.reload(); }
-    catch (err) { setCatError((err as Error).message); }
+    try { await api('/categories', { method: 'POST', body: { name: f.get('name'), kind: f.get('kind') } }); form.reset(); toast.success('Categoría agregada'); cats.reload(); }
+    catch (err) { toast.error((err as Error).message); }
   }
 
   async function removeCategory(id: string) {
     if (!confirm('¿Eliminar esta categoría?')) return;
-    try { await api(`/categories/${id}`, { method: 'DELETE' }); setCatError(''); cats.reload(); }
-    catch (err) { setCatError((err as Error).message); }
+    try { await api(`/categories/${id}`, { method: 'DELETE' }); toast.success('Categoría eliminada'); cats.reload(); }
+    catch (err) { toast.error((err as Error).message); }
   }
 
   return (
@@ -50,7 +50,6 @@ export default function Settings() {
           <Field label="Nueva (mínimo 10 caracteres)"><input name="next" type="password" required minLength={10} autoComplete="new-password" className={inputClass} /></Field>
           <button className={primaryButton}>Actualizar</button>
         </form>
-        {pwd && <p role={pwd.ok ? 'status' : 'alert'} className={`mt-3 text-sm ${pwd.ok ? 'text-brand' : 'text-danger'}`}>{pwd.msg}</p>}
       </Card>
       <Card>
         <h2 className="mb-4 font-medium">Categorías</h2>
@@ -71,7 +70,6 @@ export default function Settings() {
           <Field label="Tipo"><select name="kind" className={inputClass}>{KINDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
           <button className={primaryButton}>Agregar categoría</button>
         </form>
-        {catError && <p role="alert" className="mt-3 text-sm text-danger">{catError}</p>}
       </Card>
     </div>
   );

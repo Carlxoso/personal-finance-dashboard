@@ -1,4 +1,5 @@
-import { BarChart3, FileText, History, Landmark, LayoutDashboard, PiggyBank, Settings, Target, TrendingDown, TrendingUp } from 'lucide-react';
+import type { Role } from '../types';
+import { BarChart3, FileText, History, Landmark, LayoutDashboard, PiggyBank, Settings, Target, TrendingDown, TrendingUp, Users } from 'lucide-react';
 import { useState } from 'react';
 
 // Agregar una sección = agregar una entrada; `ready` marca las ya implementadas.
@@ -12,20 +13,22 @@ export const NAV = [
   { id: 'history', label: 'Historial', icon: History, ready: true },
   { id: 'stats', label: 'Estadísticas', icon: BarChart3, ready: true },
   { id: 'reports', label: 'Reportes', icon: FileText, ready: true },
+  { id: 'users', label: 'Usuarios', icon: Users, ready: true },
   { id: 'settings', label: 'Configuración', icon: Settings, ready: true },
 ] as const;
 
-export type SectionId = (typeof NAV)[number]['id'];
+export type SectionId = (typeof NAV)[number]['id'] | 'profile';
+const ADMIN_ONLY: SectionId[] = ['users'];
 
-export function Sidebar({ active, onSelect, onLogout }: { active: SectionId; onSelect: (id: SectionId) => void; onLogout: () => void }) {
+export function Sidebar({ active, role, onSelect, onLogout }: { active: SectionId; role: Role; onSelect: (id: SectionId) => void; onLogout: () => void }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <button className="fixed left-3 top-3 z-30 rounded-lg border border-line bg-surface px-3 py-2 text-sm md:hidden" aria-expanded={open} onClick={() => setOpen(!open)}>Menú</button>
       <aside className={`fixed inset-y-0 left-0 z-20 flex w-60 flex-col border-r border-line bg-surface p-4 transition-transform md:translate-x-0 ${open ? '' : '-translate-x-full'}`}>
-        <div className="mb-6 mt-12 flex items-center gap-3 px-2 md:mt-2"><img src="/logo.png" alt="" className="h-10 w-10" /><p className="text-xl font-semibold">Finanzas</p></div>
+        <div className="mb-6 mt-12 flex items-center justify-center gap-3 md:mt-2"><img src="/logo.png" alt="" className="h-10 w-10" /><p className="text-xl font-semibold">Finanzas</p></div>
         <nav aria-label="Principal" className="flex flex-1 flex-col gap-1">
-          {NAV.map(({ id, label, icon: Icon, ready }) => (
+          {NAV.filter((n) => role === 'ADMIN' || !ADMIN_ONLY.includes(n.id)).map(({ id, label, icon: Icon, ready }) => (
             <button key={id} disabled={!ready} aria-current={id === active ? 'page' : undefined} onClick={() => { onSelect(id); setOpen(false); }}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40 ${id === active ? 'bg-brand/10 text-brand' : 'text-muted hover:text-fg'}`}>
               <Icon size={18} aria-hidden />{label}

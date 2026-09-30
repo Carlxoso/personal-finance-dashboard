@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { DeleteButton } from '../components/DeleteButton';
+import { useToast } from '../components/Toast';
 import { Field, inputClass, primaryButton } from '../components/Field';
 import { Card, EmptyState, ProgressBar } from '../components/ui';
 import { useLoad } from '../hooks/useLoad';
@@ -9,7 +10,7 @@ import type { Goal } from '../types';
 
 export default function Goals() {
   const { data, error, reload } = useLoad<Goal[]>('/goals');
-  const [formError, setFormError] = useState('');
+  const toast = useToast();
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -18,14 +19,14 @@ export default function Goals() {
     const date = f.get('targetDate') as string;
     try {
       await api('/goals', { method: 'POST', body: { name: f.get('name'), target: f.get('target'), targetDate: date ? new Date(`${date}T12:00:00`).toISOString() : undefined } });
-      form.reset(); setFormError(''); reload();
-    } catch (err) { setFormError((err as Error).message); }
+      form.reset(); toast.success('Meta creada'); reload();
+    } catch (err) { toast.error((err as Error).message); }
   }
 
   async function remove(id: string) {
     if (!confirm('¿Eliminar esta meta?')) return;
-    try { await api(`/goals/${id}`, { method: 'DELETE' }); setFormError(''); reload(); }
-    catch (err) { setFormError((err as Error).message); }
+    try { await api(`/goals/${id}`, { method: 'DELETE' }); toast.success('Meta eliminada'); reload(); }
+    catch (err) { toast.error((err as Error).message); }
   }
 
   return (
@@ -38,7 +39,6 @@ export default function Goals() {
           <Field label="Fecha objetivo (opcional)"><input name="targetDate" type="date" className={inputClass} /></Field>
           <button className={primaryButton}>Crear meta</button>
         </form>
-        {formError && <p role="alert" className="mt-3 text-sm text-danger">{formError}</p>}
       </Card>
       {error && <p role="alert" className="text-danger">{error}</p>}
       {data?.length === 0 && <Card><EmptyState title="Sin metas todavía" hint="Crea una y aporta desde la sección Ahorros." /></Card>}

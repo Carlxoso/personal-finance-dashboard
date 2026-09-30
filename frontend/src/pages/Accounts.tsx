@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { DeleteButton } from '../components/DeleteButton';
+import { useToast } from '../components/Toast';
 import { Field, inputClass, primaryButton } from '../components/Field';
 import { Card, EmptyState } from '../components/ui';
 import { useLoad } from '../hooks/useLoad';
@@ -9,7 +10,7 @@ import type { Account } from '../types';
 
 export default function Accounts() {
   const { data, error, reload } = useLoad<Account[]>('/accounts');
-  const [formError, setFormError] = useState('');
+  const toast = useToast();
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -17,14 +18,14 @@ export default function Accounts() {
     const f = new FormData(form);
     try {
       await api('/accounts', { method: 'POST', body: { name: f.get('name'), type: f.get('type'), initialBalance: f.get('initialBalance') || '0' } });
-      form.reset(); setFormError(''); reload();
-    } catch (err) { setFormError((err as Error).message); }
+      form.reset(); toast.success('Cuenta creada'); reload();
+    } catch (err) { toast.error((err as Error).message); }
   }
 
   async function remove(id: string) {
     if (!confirm('¿Eliminar esta cuenta?')) return;
-    try { await api(`/accounts/${id}`, { method: 'DELETE' }); setFormError(''); reload(); }
-    catch (err) { setFormError((err as Error).message); }
+    try { await api(`/accounts/${id}`, { method: 'DELETE' }); toast.success('Cuenta eliminada'); reload(); }
+    catch (err) { toast.error((err as Error).message); }
   }
 
   return (
@@ -39,7 +40,6 @@ export default function Accounts() {
           <Field label="Saldo inicial"><input name="initialBalance" inputMode="decimal" pattern="-?\d{1,12}(\.\d{1,2})?" placeholder="0.00" className={inputClass} /></Field>
           <button className={primaryButton}>Crear cuenta</button>
         </form>
-        {formError && <p role="alert" className="mt-3 text-sm text-danger">{formError}</p>}
       </Card>
       {error && <p role="alert" className="text-danger">{error}</p>}
       {data?.length === 0 && <Card><EmptyState title="Sin cuentas todavía" hint="Crea una para empezar a registrar movimientos." /></Card>}
