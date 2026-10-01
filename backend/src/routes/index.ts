@@ -5,7 +5,7 @@ import { notFound } from '../lib/errors.js';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import * as notifications from '../services/notification.service.js';
-import { deleteAccount } from '../services/account.service.js';
+import * as accounts from '../services/account.service.js';
 import * as adminUsers from '../services/admin.service.js';
 import * as auth from '../services/auth.service.js';
 import { accountBalances } from '../services/balance.service.js';
@@ -58,10 +58,9 @@ admin.patch('/users/:id', async (req, res) => {
 api.use('/admin', admin);
 
 api.get('/accounts', async (req, res) => { res.json(await accountBalances(req.userId)); });
-api.post('/accounts', async (req, res) => {
-  res.status(201).json(await prisma.account.create({ data: { ...accountInput.parse(req.body), userId: req.userId } }));
-});
-api.delete('/accounts/:id', async (req, res) => { await deleteAccount(req.userId, idParam.parse(req.params).id); res.status(204).end(); });
+api.post('/accounts', async (req, res) => { res.status(201).json(await accounts.createAccount(req.userId, accountInput.parse(req.body))); });
+api.put('/accounts/:id', async (req, res) => { res.json(await accounts.updateAccount(req.userId, idParam.parse(req.params).id, accountInput.parse(req.body))); });
+api.delete('/accounts/:id', async (req, res) => { await accounts.deleteAccount(req.userId, idParam.parse(req.params).id); res.status(204).end(); });
 api.get('/categories', async (req, res) => { res.json(await prisma.category.findMany({ where: { userId: req.userId }, orderBy: { name: 'asc' } })); });
 
 api.post('/auth/password', authLimit, async (req, res) => {
@@ -86,6 +85,7 @@ api.delete('/transactions/:id', async (req, res) => { await tx.deleteTransaction
 api.get('/goals', async (req, res) => { res.json(await goals.listGoals(req.userId)); });
 api.post('/goals', async (req, res) => { res.status(201).json(await goals.createGoal(req.userId, goalInput.parse(req.body))); });
 
+api.put('/goals/:id', async (req, res) => { res.json(await goals.updateGoal(req.userId, idParam.parse(req.params).id, goalInput.parse(req.body))); });
 api.delete('/goals/:id', async (req, res) => { await goals.deleteGoal(req.userId, idParam.parse(req.params).id); res.status(204).end(); });
 
 api.get('/statistics/summary', async (req, res) => {

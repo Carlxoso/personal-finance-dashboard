@@ -31,3 +31,8 @@ export async function deleteGoal(userId: string, id: string) {
   if (await prisma.transaction.count({ where: { userId, goalId: id } })) throw new AppError(409, 'HAS_TRANSACTIONS', 'Esta meta tiene aportes. Elimínalos primero desde Ahorros.');
   await prisma.goal.delete({ where: { id } });
 }
+
+export async function updateGoal(userId: string, id: string, d: z.infer<typeof goalInput>) {
+  if (!(await prisma.goal.count({ where: { id, userId } }))) throw notFound();
+  return prisma.goal.update({ where: { id }, data: { name: d.name, target: d.target, targetDate: d.targetDate ?? null, description: d.description ?? null } });
+}
