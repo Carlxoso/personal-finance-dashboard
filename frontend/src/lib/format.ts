@@ -36,13 +36,15 @@ export const PERIODS: {
   { key: 'year', label: 'Este año' },
 ];
 
-export function periodLabel(key: PeriodKey): string {
-  if (key === 'custom') {
+export function periodLabel(period: PeriodState): string {
+  if (period.key === 'custom') {
+    if (period.from && period.to) return `Del ${period.from} al ${period.to}`;
+    if (period.from) return `Desde ${period.from}`;
     return 'Personalizado';
   }
 
-  const period = PERIODS.find((p) => p.key === key);
-  return period?.label ?? key;
+  const found = PERIODS.find((p) => p.key === period.key);
+  return found?.label ?? period.key;
 }
 
 export function rangeFor(period: PeriodState) {
