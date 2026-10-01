@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { FadeIn } from '../components/FadeIn';
 import { Field } from '../components/Field';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { VersionTag } from '../components/VersionTag';
+import { useLoad } from '../hooks/useLoad';
 import { api } from '../lib/api';
 import { wait } from '../lib/wait';
 import type { User } from '../types';
@@ -13,6 +14,8 @@ export default function Login({ onDone }: { onDone: (u: User) => void }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const open = useLoad<{ registrationOpen: boolean }>('/auth/status').data?.registrationOpen ?? false;
+  useEffect(() => { if (open) setMode('register'); }, [open]);   // sin usuarios: se crea la cuenta del administrador
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -37,12 +40,14 @@ export default function Login({ onDone }: { onDone: (u: User) => void }) {
             {error && <p role="alert" className="text-sm text-danger">{error}</p>}
             <button className="w-full rounded-lg bg-brand py-3 font-semibold text-bg transition hover:brightness-110">{mode === 'login' ? 'Entrar' : 'Registrarme'}</button>
           </form>
+          {open && (
           <p className="mt-6 text-center text-sm text-muted">
             {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}{' '}
             <button type="button" className="font-semibold text-fg hover:underline" onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}>
               {mode === 'login' ? 'Regístrate gratis' : 'Inicia sesión'}
             </button>
           </p>
+        )}
         </section>
         <VersionTag />
       </main>

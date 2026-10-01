@@ -1,6 +1,6 @@
 export type Role = 'ADMIN' | 'USER';
 export interface User { id: string; email: string; name: string | null; role: Role }
-export interface AdminUser extends User { createdAt: string }
+export interface AdminUser extends User { createdAt: string; active: boolean }
 export interface Notice { id: string; kind: 'success' | 'warning'; message: string }
 /** Los montos viajan como string decimal ("12.50"), nunca como float. */
 export interface PeriodSummary {

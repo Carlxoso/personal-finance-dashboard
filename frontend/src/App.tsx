@@ -45,7 +45,7 @@ export default function App() {
         {section === 'goals' && <Goals />}
         {section === 'stats' && <Statistics />}
         {section === 'reports' && <Reports user={user} />}
-        {section === 'users' && user.role === 'ADMIN' && <Users />}
+        {section === 'users' && user.role === 'ADMIN' && <Users meId={user.id} />}
         {section === 'settings' && <Settings />}
         {section === 'profile' && <Profile user={user} onUpdated={setUser} />}
         {section === 'history' && <Transactions key="history" title="Historial" />}

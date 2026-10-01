@@ -43,3 +43,6 @@ export const categoryInput = z.object({ name: z.string().trim().min(1).max(40), 
 
 export const registerInput = credentials.extend({ name: z.string().trim().min(1).max(60) });
 export const profileInput = z.object({ name: z.string().trim().min(1).max(60), email: z.string().email().max(120).toLowerCase() });
+
+export const adminPasswordInput = z.object({ password: z.string().min(10).max(128) });
+export const activeInput = z.object({ active: z.boolean() });

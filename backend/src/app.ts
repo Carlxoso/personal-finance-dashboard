@@ -11,7 +11,7 @@ export const app = express();
 app.disable('x-powered-by');
 app.use(helmet());
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
-app.use(rateLimit({ windowMs: 60_000, limit: 300 }));
+app.use(rateLimit({ windowMs: 60_000, limit: 300, skip: () => env.NODE_ENV === 'test' }));
 app.use(express.json({ limit: '50kb' }));
 app.use(cookieParser());
 app.use('/api', api);
