@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react';
+import { useConfirm } from '../components/Confirm';
 import { Field, inputClass, primaryButton, secondaryButton } from '../components/Field';
+import { Modal } from '../components/Modal';
 import { Pagination } from '../components/Pagination';
 import { useToast } from '../components/Toast';
 import { EMPTY_FILTERS, TransactionFilters, type Filters } from '../components/TransactionFilters';
@@ -12,6 +14,7 @@ import type { Account, Category, Goal, Page, Transaction, TxType } from '../type
 
 const PAGE_SIZE = 20;
 const FORM_TYPES: TxType[] = ['INCOME', 'EXPENSE', 'TRANSFER', 'SAVING'];
+const NEW_LABEL: Record<string, string> = { INCOME: '+ Nuevo ingreso', EXPENSE: '+ Nuevo gasto', SAVING: '+ Nuevo ahorro' };
 const dateInput = (d: Date) => d.toLocaleDateString('en-CA'); // AAAA-MM-DD en hora local
 
 function toQuery(f: Filters, page: number, fixed?: TxType) {
@@ -28,14 +31,20 @@ function toQuery(f: Filters, page: number, fixed?: TxType) {
 
 export default function Transactions({ type: fixed, title }: { type?: 'INCOME' | 'EXPENSE' | 'SAVING'; title: string }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
+  const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [type, setType] = useState<TxType>(fixed ?? 'EXPENSE');
   const list = useLoad<Page<Transaction>>(`/transactions?${toQuery(useDebounce(filters), page, fixed)}`);
   const accounts = useLoad<Account[]>('/accounts').data;
   const categories = useLoad<Category[]>('/categories').data;
   const goals = useLoad<Goal[]>('/goals').data;
+
+  function openNew() { setEditing(null); setType(fixed ?? 'EXPENSE'); setOpen(true); }
+  function openEdit(t: Transaction) { setEditing(t); setType(t.type); setOpen(true); }
+  function close() { setOpen(false); setEditing(null); }
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -52,17 +61,15 @@ export default function Transactions({ type: fixed, title }: { type?: 'INCOME' |
       if (editing) await api(`/transactions/${editing.id}`, { method: 'PUT', body });
       else await api('/transactions', { method: 'POST', body });
       toast.success(editing ? 'Movimiento actualizado' : 'Movimiento registrado');
-      stopEditing(); list.reload();
+      close(); list.reload();
     } catch (err) { toast.error((err as Error).message); }
   }
 
   async function remove(id: string) {
-    if (!confirm('¿Eliminar este movimiento?')) return;
-    try { await api(`/transactions/${id}`, { method: 'DELETE' }); toast.success('Movimiento eliminado'); if (editing?.id === id) stopEditing(); list.reload(); }
+    if (!(await confirm({ title: 'Eliminar movimiento', message: '¿Seguro que quieres eliminar este movimiento? Esta acción no se puede deshacer.', confirmLabel: 'Eliminar' }))) return;
+    try { await api(`/transactions/${id}`, { method: 'DELETE' }); toast.success('Movimiento eliminado'); list.reload(); }
     catch (err) { toast.error((err as Error).message); }
   }
-  function startEditing(t: Transaction) { setType(t.type); setEditing(t); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-  function stopEditing() { setEditing(null); setType(fixed ?? 'EXPENSE'); }
 
   if (accounts?.length === 0) return <Card><EmptyState title="Primero crea una cuenta" hint="Los movimientos se registran dentro de una cuenta." /></Card>;
   const e = editing;
@@ -70,42 +77,46 @@ export default function Transactions({ type: fixed, title }: { type?: 'INCOME' |
   const accountOptions = accounts?.map((a) => <option key={a.id} value={a.id}>{a.name}</option>);
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">{title}</h1>
-      <Card>
-        {e && <p className="mb-4 text-sm text-brand">Editando: {e.description}</p>}
-        <form key={e?.id ?? 'new'} onSubmit={submit} className="grid gap-4 sm:grid-cols-3">
-          {!fixed && (
-            <Field label="Tipo"><select value={type} onChange={(ev) => setType(ev.target.value as TxType)} className={inputClass}>
-              {FORM_TYPES.map((t) => <option key={t} value={t}>{LABELS[t]}</option>)}</select></Field>
-          )}
-          <Field label="Monto"><input name="amount" required inputMode="decimal" pattern="\d{1,12}(\.\d{1,2})?" placeholder="0.00" defaultValue={e?.amount} className={inputClass} /></Field>
-          <Field label="Descripción"><input name="description" required maxLength={120} defaultValue={e?.description} className={inputClass} /></Field>
-          <Field label="Fecha"><input name="date" type="date" required defaultValue={dateInput(e ? new Date(e.date) : new Date())} className={inputClass} /></Field>
-          <Field label={type === 'TRANSFER' ? 'Cuenta de origen' : 'Cuenta'}><select name="accountId" required defaultValue={e?.accountId} className={inputClass}>{accountOptions}</select></Field>
-          {type === 'TRANSFER' ? (
-            <Field label="Cuenta de destino"><select name="toAccountId" required defaultValue={e?.toAccountId ?? undefined} className={inputClass}>{accountOptions}</select></Field>
-          ) : type === 'SAVING' ? (
-            <Field label="Meta"><select name="goalId" required defaultValue={e?.goalId ?? undefined} className={inputClass}>{goals?.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select></Field>
-          ) : (
-            <Field label="Categoría"><select name="categoryId" required defaultValue={e?.categoryId ?? undefined} className={inputClass}>{kindCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
-          )}
-          <Field label="Notas (opcional)"><input name="notes" maxLength={500} defaultValue={e?.notes ?? ''} className={inputClass} /></Field>
-          <div className="flex items-end gap-3">
-            <button className={primaryButton}>{e ? 'Guardar cambios' : `Registrar ${LABELS[type].toLowerCase()}`}</button>
-            {e && <button type="button" onClick={stopEditing} className={secondaryButton}>Cancelar</button>}
-          </div>
-        </form>
-      </Card>
+      <header className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold">{title}</h1>
+        <button onClick={openNew} className={primaryButton}>{(fixed && NEW_LABEL[fixed]) || '+ Nuevo movimiento'}</button>
+      </header>
       <Card>
         <TransactionFilters value={filters} onChange={(f) => { setFilters(f); setPage(1); }} accounts={accounts ?? []} categories={categories ?? []} showType={!fixed} />
       </Card>
       {list.error && <p role="alert" className="text-danger">{list.error}</p>}
       <Card>
-        {list.data?.items.length === 0 ? <EmptyState title="Sin movimientos" hint="Registra uno o cambia los filtros." /> : (
-          <ul className="divide-y divide-line">{list.data?.items.map((t) => <TransactionItem key={t.id} t={t} onEdit={startEditing} onDelete={remove} />)}</ul>
+        {list.data?.items.length === 0 ? <EmptyState title="Sin movimientos" hint="Registra uno con el botón de arriba o cambia los filtros." /> : (
+          <ul className="divide-y divide-line">{list.data?.items.map((t) => <TransactionItem key={t.id} t={t} onEdit={openEdit} onDelete={remove} />)}</ul>
         )}
         {list.data && <Pagination page={page} total={list.data.total} pageSize={PAGE_SIZE} onPage={setPage} />}
       </Card>
+      {open && (
+        <Modal title={e ? 'Editar movimiento' : 'Nuevo movimiento'} onClose={close}>
+          <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+            {!fixed && (
+              <Field label="Tipo"><select value={type} onChange={(ev) => setType(ev.target.value as TxType)} className={inputClass}>
+                {FORM_TYPES.map((t) => <option key={t} value={t}>{LABELS[t]}</option>)}</select></Field>
+            )}
+            <Field label="Monto"><input name="amount" required inputMode="decimal" pattern="\d{1,12}(\.\d{1,2})?" placeholder="0.00" defaultValue={e?.amount} className={inputClass} /></Field>
+            <Field label="Descripción"><input name="description" required maxLength={120} defaultValue={e?.description} className={inputClass} /></Field>
+            <Field label="Fecha"><input name="date" type="date" required defaultValue={dateInput(e ? new Date(e.date) : new Date())} className={inputClass} /></Field>
+            <Field label={type === 'TRANSFER' ? 'Cuenta de origen' : 'Cuenta'}><select name="accountId" required defaultValue={e?.accountId} className={inputClass}>{accountOptions}</select></Field>
+            {type === 'TRANSFER' ? (
+              <Field label="Cuenta de destino"><select name="toAccountId" required defaultValue={e?.toAccountId ?? undefined} className={inputClass}>{accountOptions}</select></Field>
+            ) : type === 'SAVING' ? (
+              <Field label="Meta"><select name="goalId" required defaultValue={e?.goalId ?? undefined} className={inputClass}>{goals?.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select></Field>
+            ) : (
+              <Field label="Categoría"><select name="categoryId" required defaultValue={e?.categoryId ?? undefined} className={inputClass}>{kindCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
+            )}
+            <div className="sm:col-span-2"><Field label="Notas (opcional)"><input name="notes" maxLength={500} defaultValue={e?.notes ?? ''} className={inputClass} /></Field></div>
+            <div className="flex justify-end gap-3 sm:col-span-2">
+              <button type="button" onClick={close} className={secondaryButton}>Cancelar</button>
+              <button className={primaryButton}>{e ? 'Guardar cambios' : `Registrar ${LABELS[type].toLowerCase()}`}</button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }

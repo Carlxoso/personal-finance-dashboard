@@ -7,14 +7,14 @@ import { prisma } from '../lib/prisma.js';
 
 const EXPENSE = ['Comida', 'Transporte', 'Educación', 'Entretenimiento', 'Tecnología', 'Compras', 'Servicios', 'Salud', 'Otros'];
 const INCOME = ['Salario', 'Freelance', 'Negocio', 'Regalo', 'Otros'];
-const PUBLIC = { id: true, email: true, name: true, role: true } as const;
+const PUBLIC = { id: true, email: true, name: true, role: true, mustChangePassword: true } as const;
 
 /** Único lugar donde se crean usuarios (con sus categorías iniciales). */
-export async function createUser(d: { email: string; password: string; name: string; role: Role }) {
+export async function createUser(d: { email: string; password: string; name: string; role: Role; mustChange?: boolean }) {
   if (await prisma.user.findUnique({ where: { email: d.email } })) throw new AppError(409, 'EMAIL_TAKEN', 'Ese correo ya está registrado');
   return prisma.user.create({
     data: {
-      email: d.email, name: d.name, role: d.role, passwordHash: await argon2.hash(d.password),
+      email: d.email, name: d.name, role: d.role, mustChangePassword: d.mustChange ?? false, passwordHash: await argon2.hash(d.password),
       categories: { create: [...EXPENSE.map((name) => ({ name, kind: 'EXPENSE' as const })), ...INCOME.map((name) => ({ name, kind: 'INCOME' as const }))] },
     },
     select: PUBLIC,
@@ -30,7 +30,7 @@ export async function register(email: string, password: string, name: string) {
 export async function login(email: string, password: string) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !user.active || !(await argon2.verify(user.passwordHash, password))) throw new AppError(401, 'INVALID_CREDENTIALS', 'Correo o contraseña incorrectos');
-  return { user: { id: user.id, email: user.email, name: user.name, role: user.role }, tv: user.tokenVersion };
+  return { user: { id: user.id, email: user.email, name: user.name, role: user.role, mustChangePassword: user.mustChangePassword }, tv: user.tokenVersion };
 }
 
 export const signToken = (userId: string, tv: number) => jwt.sign({ tv }, env.JWT_SECRET, { subject: userId, expiresIn: '7d' });
@@ -52,6 +52,7 @@ export async function updateProfile(userId: string, d: { name: string; email: st
 export async function changePassword(userId: string, current: string, next: string) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user || !(await argon2.verify(user.passwordHash, current))) throw new AppError(400, 'WRONG_PASSWORD', 'La contraseña actual no es correcta');
-  const updated = await prisma.user.update({ where: { id: userId }, data: { passwordHash: await argon2.hash(next), tokenVersion: { increment: 1 } }, select: { tokenVersion: true } });
+  if (current === next) throw new AppError(400, 'SAME_PASSWORD', 'La nueva contraseña debe ser distinta de la actual');
+  const updated = await prisma.user.update({ where: { id: userId }, data: { passwordHash: await argon2.hash(next), tokenVersion: { increment: 1 }, mustChangePassword: false }, select: { tokenVersion: true } });
   return updated.tokenVersion;
 }

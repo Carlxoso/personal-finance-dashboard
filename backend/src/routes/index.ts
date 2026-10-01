@@ -4,6 +4,7 @@ import { env } from '../config/env.js';
 import { notFound } from '../lib/errors.js';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import * as reports from '../services/report.service.js';
 import * as notifications from '../services/notification.service.js';
 import * as accounts from '../services/account.service.js';
 import * as adminUsers from '../services/admin.service.js';
@@ -13,7 +14,7 @@ import { monthlySeries, periodSummary } from '../services/statistics.service.js'
 import * as categories from '../services/category.service.js';
 import * as goals from '../services/goal.service.js';
 import * as tx from '../services/transaction.service.js';
-import { accountInput, categoryInput, credentials, profileInput, registerInput, adminPasswordInput, activeInput, goalInput, idParam, monthsQuery, passwordInput, periodQuery, txInput, txQuery } from '../validation/schemas.js';
+import { accountInput, categoryInput, credentials, profileInput, registerInput, adminPasswordInput, activeInput, reportQuery, goalInput, idParam, monthsQuery, passwordInput, periodQuery, txInput, txQuery } from '../validation/schemas.js';
 
 const api = Router();
 // Cookie HttpOnly + SameSite=Strict + CORS restringido cubren CSRF.
@@ -36,7 +37,7 @@ api.post('/auth/logout', async (req, res) => { await auth.logout(req.cookies?.to
 
 api.use(requireAuth);
 api.get('/auth/me', async (req, res) => {
-  const user = await prisma.user.findUnique({ where: { id: req.userId }, select: { id: true, email: true, name: true, role: true } });
+  const user = await prisma.user.findUnique({ where: { id: req.userId }, select: { id: true, email: true, name: true, role: true, mustChangePassword: true } });
   if (!user) throw notFound();
   res.json(user);
 });
@@ -46,7 +47,7 @@ api.get('/notifications', async (req, res) => { res.json(await notifications.lis
 const admin = Router();
 admin.use(requireRole('ADMIN'));
 admin.get('/users', async (_req, res) => { res.json(await adminUsers.listUsers()); });
-admin.post('/users', async (req, res) => { res.status(201).json(await auth.createUser({ ...registerInput.parse(req.body), role: 'USER' })); });
+admin.post('/users', async (req, res) => { res.status(201).json(await auth.createUser({ ...registerInput.parse(req.body), role: 'USER', mustChange: true })); });
 admin.post('/users/:id/password', async (req, res) => {
   await adminUsers.resetPassword(idParam.parse(req.params).id, adminPasswordInput.parse(req.body).password);
   res.status(204).end();
@@ -71,9 +72,10 @@ api.post('/auth/password', authLimit, async (req, res) => {
 api.post('/categories', async (req, res) => { res.status(201).json(await categories.createCategory(req.userId, categoryInput.parse(req.body))); });
 api.delete('/categories/:id', async (req, res) => { await categories.deleteCategory(req.userId, idParam.parse(req.params).id); res.status(204).end(); });
 
-api.get('/transactions/export', async (req, res) => {
-  const { from, to } = periodQuery.parse(req.query);
-  res.type('text/csv').attachment('reporte.csv').send(await tx.exportCsv(req.userId, from, to));
+api.get('/reports/export', async (req, res) => {
+  const { from, to, label } = reportQuery.parse(req.query);
+  const file = await reports.buildReport(req.userId, from, to, label);
+  res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').attachment('reporte-financiero.xlsx').send(Buffer.from(file));
 });
 api.get('/transactions', async (req, res) => { res.json(await tx.listTransactions(req.userId, txQuery.parse(req.query))); });
 api.post('/transactions', async (req, res) => { res.status(201).json(await tx.createTransaction(req.userId, txInput.parse(req.body))); });

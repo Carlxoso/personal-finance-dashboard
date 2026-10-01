@@ -3,10 +3,10 @@ import { AppError, notFound } from '../lib/errors.js';
 import { prisma } from '../lib/prisma.js';
 
 export const listUsers = () =>
-  prisma.user.findMany({ select: { id: true, email: true, name: true, role: true, active: true, createdAt: true }, orderBy: { createdAt: 'asc' } });
+  prisma.user.findMany({ select: { id: true, email: true, name: true, role: true, active: true, mustChangePassword: true, createdAt: true }, orderBy: { createdAt: 'asc' } });
 
 export async function resetPassword(userId: string, password: string) {
-  const r = await prisma.user.updateMany({ where: { id: userId }, data: { passwordHash: await argon2.hash(password), tokenVersion: { increment: 1 } } });
+  const r = await prisma.user.updateMany({ where: { id: userId }, data: { passwordHash: await argon2.hash(password), tokenVersion: { increment: 1 }, mustChangePassword: true } });
   if (!r.count) throw notFound();
 }
 

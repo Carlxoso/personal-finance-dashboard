@@ -1,37 +1,37 @@
 import { PiggyBank, Scale, TrendingDown, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { primaryButton } from '../components/Field';
-import { downloadReportPdf } from '../lib/reportPdf';
+import { primaryButton, secondaryButton } from '../components/Field';
 import { PeriodSelect } from '../components/PeriodSelect';
+import { useToast } from '../components/Toast';
 import { TransactionItem } from '../components/TransactionItem';
 import { Card, EmptyState, StatCard } from '../components/ui';
 import { useLoad } from '../hooks/useLoad';
-import { PERIODS, formatMoney, rangeFor, type PeriodKey } from '../lib/format';
+import { DEFAULT_PERIOD, formatMoney, periodLabel, rangeFor, type PeriodState } from '../lib/format';
+import { downloadReportPdf } from '../lib/reportPdf';
 import type { Page, PeriodSummary, Transaction, User } from '../types';
 
 const cents = (v: string) => Math.round(Number(v) * 100); // cálculo en centavos para evitar errores de decimales
 
 export default function Reports({ user }: { user: User }) {
-  const [period, setPeriod] = useState<PeriodKey>('month');
+  const toast = useToast();
+  const [period, setPeriod] = useState<PeriodState>(DEFAULT_PERIOD);
   const range = useMemo(() => new URLSearchParams(rangeFor(period)).toString(), [period]);
   const summary = useLoad<PeriodSummary>(`/statistics/summary?${range}`);
   const txs = useLoad<Page<Transaction>>(`/transactions?pageSize=100&${range}`).data;
   const s = summary.data;
   const net = s ? ((cents(s.income) - cents(s.expense)) / 100).toFixed(2) : '0';
   const totalExpense = s ? cents(s.expense) : 0;
-  const [exportError, setExportError] = useState('');
 
   function exportPdf() {
-    if (s) downloadReportPdf({ user, periodLabel: PERIODS.find((p) => p.key === period)?.label ?? '', summary: s, txs: txs ?? null });
+    if (s) downloadReportPdf({ user, periodLabel: periodLabel(period), summary: s, txs: txs ?? null });
   }
 
-  async function exportCsv() {
-    setExportError('');
-    const res = await fetch(`/api/transactions/export?${range}`, { credentials: 'include' });
-    if (!res.ok) return setExportError('No se pudo exportar el reporte');
+  async function exportExcel() {
+    const res = await fetch(`/api/reports/export?${range}&label=${encodeURIComponent(periodLabel(period))}`, { credentials: 'include' });
+    if (!res.ok) return toast.error('No se pudo exportar el reporte');
     const url = URL.createObjectURL(await res.blob());
     const a = document.createElement('a');
-    a.href = url; a.download = `reporte-${period}.csv`; a.click();
+    a.href = url; a.download = 'reporte-financiero.xlsx'; a.click();
     URL.revokeObjectURL(url);
   }
 
@@ -39,13 +39,13 @@ export default function Reports({ user }: { user: User }) {
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Reportes</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <PeriodSelect value={period} onChange={setPeriod} />
-          <button onClick={exportCsv} className={primaryButton}>Exportar CSV</button>
+          <button onClick={exportExcel} className={secondaryButton}>Exportar Excel</button>
           <button onClick={exportPdf} className={primaryButton}>Exportar PDF</button>
         </div>
       </header>
-      {(summary.error || exportError) && <p role="alert" className="text-danger">{summary.error || exportError}</p>}
+      {summary.error && <p role="alert" className="text-danger">{summary.error}</p>}
       {s && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

@@ -46,3 +46,5 @@ export const profileInput = z.object({ name: z.string().trim().min(1).max(60), e
 
 export const adminPasswordInput = z.object({ password: z.string().min(10).max(128) });
 export const activeInput = z.object({ active: z.boolean() });
+
+export const reportQuery = periodQuery.extend({ label: z.string().max(40).default('') });

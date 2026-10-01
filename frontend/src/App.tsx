@@ -7,6 +7,7 @@ import { VersionTag } from './components/VersionTag';
 import { api } from './lib/api';
 import { wait } from './lib/wait';
 import Accounts from './pages/Accounts';
+import ChangePassword from './pages/ChangePassword';
 import Dashboard from './pages/Dashboard';
 import Goals from './pages/Goals';
 import Login from './pages/Login';
@@ -32,6 +33,7 @@ export default function App() {
 
   if (user === undefined || loggingOut) return <LoadingScreen label={loggingOut ? 'Cerrando sesión…' : undefined} />;
   if (!user) return <Login onDone={setUser} />;
+  if (user.mustChangePassword) return <ChangePassword onDone={setUser} onLogout={logout} />;
   return (
     <FadeIn>
       <Sidebar active={section} role={user.role} onSelect={setSection} onLogout={logout} />

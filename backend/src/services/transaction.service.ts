@@ -45,18 +45,3 @@ export async function deleteTransaction(userId: string, id: string) {
   if (!(await prisma.transaction.deleteMany({ where: { id, userId } })).count) throw notFound();
 }
 
-// Neutraliza fórmulas de Excel (=, +, -, @) y escapa comillas, comas y saltos de línea.
-const csvCell = (v: string) => {
-  const s = /^[=+\-@]/.test(v) ? `'${v}` : v;
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-};
-
-export async function exportCsv(userId: string, from: Date, to: Date) {
-  const rows = await prisma.transaction.findMany({
-    where: { userId, date: { gte: from, lte: to } }, orderBy: { date: 'asc' }, take: 10000,
-    include: { category: true, account: true, toAccount: true },
-  });
-  const head = ['Fecha', 'Tipo', 'Descripción', 'Categoría', 'Cuenta', 'Destino', 'Monto'];
-  const body = rows.map((t) => [t.date.toISOString().slice(0, 10), t.type, t.description, t.category?.name ?? '', t.account.name, t.toAccount?.name ?? '', t.amount.toFixed(2)]);
-  return '\uFEFF' + [head, ...body].map((r) => r.map(csvCell).join(',')).join('\n');
-}

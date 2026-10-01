@@ -34,6 +34,7 @@ model User {
   role         Role          @default(USER)
   active       Boolean       @default(true)
   tokenVersion Int           @default(0)
+  mustChangePassword Boolean @default(false)
   createdAt    DateTime      @default(now())
   accounts     Account[]
   categories   Category[]

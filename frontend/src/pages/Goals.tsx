@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react';
+import { useConfirm } from '../components/Confirm';
 import { DeleteButton } from '../components/DeleteButton';
 import { EditButton } from '../components/EditButton';
 import { Field, inputClass, primaryButton, secondaryButton } from '../components/Field';
+import { Modal } from '../components/Modal';
 import { useToast } from '../components/Toast';
 import { Card, EmptyState, ProgressBar } from '../components/ui';
 import { useLoad } from '../hooks/useLoad';
@@ -12,7 +14,10 @@ import type { Goal } from '../types';
 export default function Goals() {
   const { data, error, reload } = useLoad<Goal[]>('/goals');
   const toast = useToast();
+  const confirm = useConfirm();
+  const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Goal | null>(null);
+  const close = () => { setOpen(false); setEditing(null); };
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,31 +28,22 @@ export default function Goals() {
       if (editing) await api(`/goals/${editing.id}`, { method: 'PUT', body });
       else await api('/goals', { method: 'POST', body });
       toast.success(editing ? 'Meta actualizada' : 'Meta creada');
-      setEditing(null); reload();
+      close(); reload();
     } catch (err) { toast.error((err as Error).message); }
   }
 
-  async function remove(id: string) {
-    if (!confirm('¿Eliminar esta meta?')) return;
-    try { await api(`/goals/${id}`, { method: 'DELETE' }); toast.success('Meta eliminada'); if (editing?.id === id) setEditing(null); reload(); }
+  async function remove(g: Goal) {
+    if (!(await confirm({ title: 'Eliminar meta', message: `¿Seguro que quieres eliminar "${g.name}"? Solo se puede si no tiene aportes.`, confirmLabel: 'Eliminar' }))) return;
+    try { await api(`/goals/${g.id}`, { method: 'DELETE' }); toast.success('Meta eliminada'); reload(); }
     catch (err) { toast.error((err as Error).message); }
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Metas</h1>
-      <Card>
-        {editing && <p className="mb-4 text-sm text-brand">Editando: {editing.name}</p>}
-        <form key={editing?.id ?? 'new'} onSubmit={submit} className="grid gap-4 sm:grid-cols-4 sm:items-end">
-          <Field label="Nombre"><input name="name" required maxLength={80} defaultValue={editing?.name} className={inputClass} /></Field>
-          <Field label="Monto objetivo"><input name="target" required inputMode="decimal" pattern="\d{1,12}(\.\d{1,2})?" placeholder="0.00" defaultValue={editing?.target} className={inputClass} /></Field>
-          <Field label="Fecha objetivo (opcional)"><input name="targetDate" type="date" defaultValue={editing?.targetDate?.slice(0, 10)} className={inputClass} /></Field>
-          <div className="flex items-center gap-3">
-            <button className={primaryButton}>{editing ? 'Guardar cambios' : 'Crear meta'}</button>
-            {editing && <button type="button" onClick={() => setEditing(null)} className={secondaryButton}>Cancelar</button>}
-          </div>
-        </form>
-      </Card>
+      <header className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold">Metas</h1>
+        <button onClick={() => setOpen(true)} className={primaryButton}>+ Nueva meta</button>
+      </header>
       {error && <p role="alert" className="text-danger">{error}</p>}
       {data?.length === 0 && <Card><EmptyState title="Sin metas todavía" hint="Crea una y aporta desde la sección Ahorros." /></Card>}
       <div className="grid gap-4 lg:grid-cols-2">
@@ -57,8 +53,8 @@ export default function Goals() {
               <h2 className="font-medium">{g.name}</h2>
               <span className="flex items-center gap-3">
                 <span className="tabular-nums text-brand">{g.percent}%</span>
-                <EditButton label={g.name} onClick={() => { setEditing(g); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
-                <DeleteButton label={g.name} onClick={() => remove(g.id)} />
+                <EditButton label={g.name} onClick={() => { setEditing(g); setOpen(true); }} />
+                <DeleteButton label={g.name} onClick={() => remove(g)} />
               </span>
             </div>
             <ProgressBar value={Number(g.percent)} label={g.name} />
@@ -67,6 +63,19 @@ export default function Goals() {
           </Card>
         ))}
       </div>
+      {open && (
+        <Modal title={editing ? 'Editar meta' : 'Nueva meta'} onClose={close} width="max-w-lg">
+          <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+            <Field label="Nombre"><input name="name" required maxLength={80} defaultValue={editing?.name} className={inputClass} /></Field>
+            <Field label="Monto objetivo"><input name="target" required inputMode="decimal" pattern="\d{1,12}(\.\d{1,2})?" placeholder="0.00" defaultValue={editing?.target} className={inputClass} /></Field>
+            <Field label="Fecha objetivo (opcional)"><input name="targetDate" type="date" defaultValue={editing?.targetDate?.slice(0, 10)} className={inputClass} /></Field>
+            <div className="flex items-end justify-end gap-3 sm:col-span-2">
+              <button type="button" onClick={close} className={secondaryButton}>Cancelar</button>
+              <button className={primaryButton}>{editing ? 'Guardar cambios' : 'Crear meta'}</button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }

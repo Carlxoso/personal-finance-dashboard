@@ -5,17 +5,25 @@ import { PeriodSelect } from '../components/PeriodSelect';
 import { TransactionItem } from '../components/TransactionItem';
 import { Card, EmptyState, ProgressBar, StatCard } from '../components/ui';
 import { useLoad } from '../hooks/useLoad';
-import { formatMoney, rangeFor, type PeriodKey } from '../lib/format';
+import { DEFAULT_PERIOD, formatMoney, rangeFor, type PeriodKey, type PeriodState } from '../lib/format';
 import type { Goal, MonthPoint, Page, PeriodSummary, Transaction } from '../types';
 
 // Meses que abarcan los gráficos según el período elegido.
-const CHART_MONTHS: Record<PeriodKey, number> = { today: 6, week: 6, month: 6, quarter: 3, year: 12 };
+const CHART_MONTHS: Record<Exclude<PeriodKey, 'custom'>, number> = { today: 6, week: 6, month: 6, quarter: 3, year: 12 };
+
+// En un período personalizado, los gráficos cubren desde el mes de inicio hasta hoy (máx. 24 meses).
+function chartMonths(p: PeriodState) {
+  if (p.key !== 'custom') return CHART_MONTHS[p.key];
+  if (!p.from) return 6;
+  const start = new Date(`${p.from}T00:00:00`), now = new Date();
+  return Math.min(24, Math.max(1, (now.getFullYear() - start.getFullYear()) * 12 + now.getMonth() - start.getMonth() + 1));
+}
 
 export default function Dashboard() {
-  const [period, setPeriod] = useState<PeriodKey>('month');
+  const [period, setPeriod] = useState<PeriodState>(DEFAULT_PERIOD);
   const query = useMemo(() => new URLSearchParams(rangeFor(period)).toString(), [period]);
   const summary = useLoad<PeriodSummary>(`/statistics/summary?${query}`);
-  const series = useLoad<MonthPoint[]>(`/statistics/monthly?months=${CHART_MONTHS[period]}`);
+  const series = useLoad<MonthPoint[]>(`/statistics/monthly?months=${chartMonths(period)}`);
   const goals = useLoad<Goal[]>('/goals').data;
   const recent = useLoad<Page<Transaction>>('/transactions?pageSize=5').data;
 

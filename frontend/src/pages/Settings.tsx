@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { DeleteButton } from '../components/DeleteButton';
 import { Field, inputClass, primaryButton } from '../components/Field';
+import { useConfirm } from '../components/Confirm';
 import { useToast } from '../components/Toast';
 import { Card } from '../components/ui';
 import { useLoad } from '../hooks/useLoad';
@@ -13,6 +14,7 @@ export default function Settings() {
   const me = useLoad<User>('/auth/me').data;
   const cats = useLoad<Category[]>('/categories');
   const toast = useToast();
+  const confirm = useConfirm();
 
   async function changePassword(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,7 +33,7 @@ export default function Settings() {
   }
 
   async function removeCategory(id: string) {
-    if (!confirm('¿Eliminar esta categoría?')) return;
+    if (!(await confirm({ title: 'Eliminar categoría', message: '¿Seguro que quieres eliminar esta categoría?', confirmLabel: 'Eliminar' }))) return;
     try { await api(`/categories/${id}`, { method: 'DELETE' }); toast.success('Categoría eliminada'); cats.reload(); }
     catch (err) { toast.error((err as Error).message); }
   }
