@@ -5,7 +5,7 @@ const tones = { brand: 'text-brand', accent: 'text-accent', danger: 'text-danger
 const bgTones = { brand: 'bg-brand/10', accent: 'bg-accent/10', danger: 'bg-danger/10' } as const;
 
 export const Card = ({ children, className = '' }: { children: ReactNode; className?: string }) => (
-  <section className={`rounded-card border border-line bg-surface p-5 shadow-sm shadow-black/[0.03] ${className}`}>{children}</section>
+  <section className={`rounded-card border border-line bg-surface p-4 shadow-sm sm:p-5 shadow-black/[0.03] ${className}`}>{children}</section>
 );
 
 export interface Delta { value: number | null; label: string; goodWhenUp: boolean }

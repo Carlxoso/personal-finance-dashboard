@@ -46,11 +46,15 @@ export function Sidebar({ active, role, onSelect, onLogout }: { active: SectionI
   };
   return (
     <>
-      <button aria-label="Abrir menú" aria-expanded={open} onClick={() => setOpen(true)}
-        className="fixed left-3 top-3 z-30 grid h-10 w-10 place-items-center rounded-lg border border-side-line bg-side text-side-fg shadow-sm md:hidden"><Menu size={20} aria-hidden /></button>
+      {/* Celular: barra superior fija con el botón del menú, para que no flote sobre el contenido */}
+      <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-white/90 px-2 backdrop-blur md:hidden">
+        <button aria-label="Abrir menú" aria-expanded={open} onClick={() => setOpen(true)}
+          className="grid h-10 w-10 place-items-center rounded-lg text-fg transition hover:bg-gray-100"><Menu size={22} aria-hidden /></button>
+        <img src="/logo.png" alt="" className="h-7 w-7" /><span className="font-semibold">Finanzas</span>
+      </div>
       <div onClick={() => setOpen(false)} aria-hidden
-        className={`fixed inset-0 z-20 bg-slate-900/40 backdrop-blur-[2px] transition-opacity md:hidden ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`} />
-      <aside className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-side-line bg-side p-4 text-side-fg shadow-xl transition-transform duration-300 md:translate-x-0 md:shadow-none ${open ? '' : '-translate-x-full'}`}>
+        className={`fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-[2px] transition-opacity md:hidden ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`} />
+      <aside className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-side-line bg-side p-4 text-side-fg shadow-xl transition-transform duration-300 md:translate-x-0 md:shadow-none ${open ? '' : '-translate-x-full'}`}>
         <button aria-label="Cerrar menú" onClick={() => setOpen(false)} className="absolute right-3 top-3 rounded-lg p-1.5 text-side-muted hover:bg-side-hover hover:text-side-fg md:hidden"><X size={20} aria-hidden /></button>
         <div className="mb-6 mt-8 flex items-center justify-center gap-3 md:mt-2"><img src="/logo.png" alt="" className="h-11 w-11" /><p className="text-xl font-semibold text-side-fg">Finanzas</p></div>
         <nav aria-label="Principal" className="flex-1 overflow-y-auto">

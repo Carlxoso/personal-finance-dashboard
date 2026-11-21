@@ -10,6 +10,10 @@ const monthLabel = (key: string) => {
   return new Date(y!, m! - 1, 1).toLocaleDateString('es-EC', { month: 'short' });
 };
 const fmt = (v: unknown) => formatMoney(Number(v).toFixed(2)); // solo presentación
+// Etiquetas cortas en el eje Y ($1,5 mil) para que ocupe lo mínimo, sobre todo en celular.
+const compact = new Intl.NumberFormat('es-EC', { notation: 'compact', maximumFractionDigits: 1 });
+const yTick = (v: number) => `$${compact.format(v)}`;
+const margin = { top: 8, right: 8, bottom: 0, left: 0 };
 
 export const toChartPoints = (data: MonthPoint[] | null): ChartPoint[] =>
   data?.map((p) => ({ label: monthLabel(p.month), income: Number(p.income), expense: Number(p.expense), saving: Number(p.saving), balance: Number(p.balance) })) ?? [];
@@ -19,17 +23,17 @@ export function MonthlyCharts({ points }: { points: ChartPoint[] }) {
   return (
     <>
       <ChartContainer title="Evolución del saldo">
-        <LineChart data={points}>
+        <LineChart data={points} margin={margin}>
           <CartesianGrid stroke="var(--color-line)" vertical={false} />
-          <XAxis dataKey="label" {...axisProps} /><YAxis width={64} {...axisProps} />
+          <XAxis dataKey="label" {...axisProps} /><YAxis width="auto" tickFormatter={yTick} {...axisProps} />
           <Tooltip contentStyle={tooltipStyle} formatter={fmt} />
           <Line type="monotone" dataKey="balance" name="Saldo" stroke="var(--color-brand)" strokeWidth={2} dot={false} />
         </LineChart>
       </ChartContainer>
       <ChartContainer title="Ingresos vs gastos">
-        <BarChart data={points}>
+        <BarChart data={points} margin={margin}>
           <CartesianGrid stroke="var(--color-line)" vertical={false} />
-          <XAxis dataKey="label" {...axisProps} /><YAxis width={64} {...axisProps} />
+          <XAxis dataKey="label" {...axisProps} /><YAxis width="auto" tickFormatter={yTick} {...axisProps} />
           <Tooltip contentStyle={tooltipStyle} formatter={fmt} cursor={{ fill: 'var(--color-line)', opacity: 0.4 }} />
           <Legend />
           <Bar dataKey="income" name="Ingresos" fill="var(--color-brand)" radius={[4, 4, 0, 0]} />

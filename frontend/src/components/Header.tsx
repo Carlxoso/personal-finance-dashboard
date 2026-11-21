@@ -11,7 +11,7 @@ export function Header({ user, section, onNavigate }: { user: User; section: Sec
   const notices = useLoad<Notice[]>(`/notifications?k=${section}`).data ?? []; // se recarga al cambiar de sección
   const display = user.name || user.email;
   return (
-    <div className="mb-6 flex items-center justify-end gap-2">
+    <div className="fixed right-2 top-2 z-30 flex items-center gap-1 md:static md:mb-6 md:justify-end md:gap-2">   {/* en celular vive dentro de la barra superior */}
       <Dropdown label="Notificaciones" button={
         <span className="relative block p-1"><Bell size={20} aria-hidden />
           {notices.length > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-semibold text-bg">{notices.length}</span>}
