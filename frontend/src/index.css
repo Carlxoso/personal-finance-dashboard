@@ -2,14 +2,21 @@
 
 /* Tokens visuales: único lugar donde se definen colores, radios y fuentes */
 @theme {
-  --color-bg: #0a1224;
-  --color-surface: #101b33;
-  --color-line: #1e2d4d;
-  --color-fg: #e6edf7;
-  --color-muted: #8a9bb8;
-  --color-brand: #2dd4bf;
-  --color-accent: #3b82f6;
-  --color-danger: #f87171;
+  /* Área de contenido (dashboard, movimientos, gráficos): blanco */
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-line: #e5e7eb;
+  --color-fg: #111827;
+  --color-muted: #6b7280;
+  --color-brand: #0d9488;
+  --color-accent: #2563eb;
+  --color-danger: #dc2626;
+  /* Menú lateral: gris suave */
+  --color-side: #eceef2;
+  --color-side-line: #dcdfe5;
+  --color-side-hover: #e1e4ea;
+  --color-side-fg: #1f2937;
+  --color-side-muted: #5b6472;
   --radius-card: 1rem;
   --font-sans: "Inter", system-ui, sans-serif;
 }
@@ -17,8 +24,30 @@ body { background: var(--color-bg); color: var(--color-fg); font-family: var(--f
 :focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
 select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a9bb8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   padding-right: 2.25rem;
+}
+input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.6; cursor: pointer; }
+
+/* ---------- Pantallas de acceso (login / cambio de contraseña) ---------- */
+/* Movimiento mínimo: una entrada suave al cargar y nada en bucle. */
+@keyframes auth-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes auth-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes auth-shake { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
+
+.auth-rise { opacity: 0; animation: auth-rise .5s ease-out forwards; }
+.auth-bar { transform: scaleY(0); animation: auth-grow .7s cubic-bezier(.2,.8,.2,1) forwards; }
+.auth-shake { animation: auth-shake .35s ease; }
+
+/* Campo con etiqueta flotante */
+.auth-field { position: relative; }
+.auth-field input { padding-top: 1.35rem; padding-bottom: .45rem; }
+.auth-field label { position: absolute; left: 2.75rem; top: 50%; transform: translateY(-50%); pointer-events: none; transition: all .15s ease; color: #6b7280; font-size: .95rem; }
+.auth-field input:focus + label,
+.auth-field input:not(:placeholder-shown) + label { top: .85rem; font-size: .7rem; letter-spacing: .02em; color: var(--color-brand); font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-rise, .auth-bar, .auth-shake { animation: none !important; opacity: 1; transform: none; }
 }

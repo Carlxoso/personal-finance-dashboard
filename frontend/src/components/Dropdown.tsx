@@ -14,7 +14,7 @@ export function Dropdown({ label, button, children }: { label: string; button: R
   return (
     <div ref={ref} className="relative">
       <button aria-label={label} aria-expanded={open} onClick={() => setOpen(!open)} className="rounded-xl p-1.5 text-muted transition hover:bg-line/40 hover:text-fg">{button}</button>
-      {open && <div className="absolute right-0 z-40 mt-2 w-72 rounded-2xl border border-line bg-surface p-2 shadow-2xl shadow-black/40">{children(() => setOpen(false))}</div>}
+      {open && <div className="absolute right-0 z-40 mt-2 w-72 rounded-2xl border border-line bg-surface p-2 shadow-2xl shadow-black/10">{children(() => setOpen(false))}</div>}
     </div>
   );
 }

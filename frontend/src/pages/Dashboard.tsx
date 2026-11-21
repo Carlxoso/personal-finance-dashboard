@@ -5,7 +5,7 @@ import { PeriodSelect } from '../components/PeriodSelect';
 import { TransactionItem } from '../components/TransactionItem';
 import { Card, EmptyState, ProgressBar, StatCard } from '../components/ui';
 import { useLoad } from '../hooks/useLoad';
-import { DEFAULT_PERIOD, formatMoney, rangeFor, type PeriodKey, type PeriodState } from '../lib/format';
+import { DEFAULT_PERIOD, formatMoney, percentChange, previousRange, rangeFor, type PeriodKey, type PeriodState } from '../lib/format';
 import type { Goal, MonthPoint, Page, PeriodSummary, Transaction } from '../types';
 
 // Meses que abarcan los gráficos según el período elegido.
@@ -23,6 +23,9 @@ export default function Dashboard() {
   const [period, setPeriod] = useState<PeriodState>(DEFAULT_PERIOD);
   const query = useMemo(() => new URLSearchParams(rangeFor(period)).toString(), [period]);
   const summary = useLoad<PeriodSummary>(`/statistics/summary?${query}`);
+  const prevRange = useMemo(() => previousRange(period), [period]);
+  const prevQuery = useMemo(() => new URLSearchParams({ from: prevRange.from, to: prevRange.to }).toString(), [prevRange]);
+  const previous = useLoad<PeriodSummary>(`/statistics/summary?${prevQuery}`).data;
   const series = useLoad<MonthPoint[]>(`/statistics/monthly?months=${chartMonths(period)}`);
   const goals = useLoad<Goal[]>('/goals').data;
   const recent = useLoad<Page<Transaction>>('/transactions?pageSize=5').data;
@@ -30,6 +33,8 @@ export default function Dashboard() {
   const points = useMemo(() => toChartPoints(series.data), [series.data]);
   const goal = goals?.filter((g) => Number(g.remaining) > 0).sort((a, b) => Number(b.percent) - Number(a.percent))[0];
   const data = summary.data;
+  const delta = (key: 'income' | 'expense' | 'saving', goodWhenUp: boolean) =>
+    data && previous ? { value: percentChange(data[key], previous[key]), label: prevRange.label, goodWhenUp } : undefined;
   const maxExpense = Math.max(1, ...(data?.expenseByCategory.map((c) => Number(c.amount)) ?? []));
 
   return (
@@ -44,9 +49,9 @@ export default function Dashboard() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard label="Saldo total" value={formatMoney(data.totalBalance)} icon={Wallet} />
-            <StatCard label="Ingresos" value={formatMoney(data.income)} icon={TrendingUp} tone="brand" />
-            <StatCard label="Gastos" value={formatMoney(data.expense)} icon={TrendingDown} tone="danger" />
-            <StatCard label="Ahorro" value={formatMoney(data.saving)} icon={PiggyBank} tone="brand" />
+            <StatCard label="Ingresos" value={formatMoney(data.income)} icon={TrendingUp} tone="brand" delta={delta('income', true)} />
+            <StatCard label="Gastos" value={formatMoney(data.expense)} icon={TrendingDown} tone="danger" delta={delta('expense', false)} />
+            <StatCard label="Ahorro" value={formatMoney(data.saving)} icon={PiggyBank} tone="brand" delta={delta('saving', true)} />
           </div>
           <div className="grid gap-4 lg:grid-cols-2"><MonthlyCharts points={points} /></div>
           <div className="grid gap-4 lg:grid-cols-2">

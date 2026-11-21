@@ -37,7 +37,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <style>{css}</style>
       <div className="pointer-events-none fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-2 px-4">
         {items.map((t) => (
-          <div key={t.id} role={t.kind === 'error' ? 'alert' : 'status'} className="toast pointer-events-auto flex items-center gap-3 rounded-2xl border border-line bg-surface px-5 py-3 shadow-2xl shadow-black/40">
+          <div key={t.id} role={t.kind === 'error' ? 'alert' : 'status'} className="toast pointer-events-auto flex items-center gap-3 rounded-2xl border border-line bg-surface px-5 py-3 shadow-2xl shadow-black/10">
             <ToastIcon kind={t.kind} /><p className="text-sm font-medium">{t.message}</p>
           </div>
         ))}
