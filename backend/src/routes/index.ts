@@ -73,6 +73,7 @@ api.get('/notifications', async (req, res) => { res.json(await notifications.lis
 const admin = Router();
 admin.use(requireRole('ADMIN'));
 admin.get('/users', async (_req, res) => { res.json(await adminUsers.listUsers()); });
+admin.get('/summary', async (_req, res) => { res.json(await adminUsers.systemSummary()); });
 admin.post('/users', async (req, res) => {
   const user = await auth.createUser({ ...registerInput.parse(req.body), role: 'USER', mustChange: true });
   await audit.record(audit.contextOf(req), { action: 'USER_CREATED', actorId: req.userId, targetId: user.id, targetEmail: user.email, details: { role: user.role } });

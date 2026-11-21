@@ -24,7 +24,9 @@ export async function createUser(d: { email: string; password: string; name: str
 /** Solo crea la primera cuenta (administrador); después el registro queda cerrado y el admin crea los usuarios. */
 export async function register(email: string, password: string, name: string) {
   if (await prisma.user.count()) throw new AppError(403, 'REGISTRATION_CLOSED', 'El registro está cerrado. Pide al administrador que cree tu cuenta.');
-  return { user: await createUser({ email, password, name, role: 'ADMIN' }), tv: 0 };
+  const user = await createUser({ email, password, name, role: 'ADMIN' });
+  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });   // el registro ya inicia sesión
+  return { user, tv: 0 };
 }
 
 /** Error de ingreso: al cliente siempre le llega el mismo mensaje; el motivo real solo va a la bitácora. */
@@ -39,6 +41,7 @@ export async function login(email: string, password: string) {
   if (!user) throw new LoginError('UNKNOWN_EMAIL');
   if (!(await argon2.verify(user.passwordHash, password))) throw new LoginError('WRONG_PASSWORD', user.id);
   if (!user.active) throw new LoginError('INACTIVE', user.id);
+  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
   return { user: { id: user.id, email: user.email, name: user.name, role: user.role, mustChangePassword: user.mustChangePassword }, tv: user.tokenVersion };
 }
 

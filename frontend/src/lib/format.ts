@@ -136,3 +136,21 @@ export function percentChange(current: string | number, previous: string | numbe
   if (p === 0) return null;
   return ((c - p) / Math.abs(p)) * 100;
 }
+
+const rtf = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
+const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [['year', 31536e3], ['month', 2592e3], ['week', 604800], ['day', 86400], ['hour', 3600], ['minute', 60]];
+
+/** "hace 3 horas", "ayer", "hace 2 meses"… */
+export function timeAgo(iso: string) {
+  const seconds = (new Date(iso).getTime() - Date.now()) / 1000;
+  for (const [unit, size] of UNITS) if (Math.abs(seconds) >= size) return rtf.format(Math.round(seconds / size), unit);
+  return 'hace un momento';
+}
+
+/** Duración legible: "3 h 20 min", "2 días 4 h". */
+export function duration(totalSeconds: number) {
+  const d = Math.floor(totalSeconds / 86400), h = Math.floor((totalSeconds % 86400) / 3600), m = Math.floor((totalSeconds % 3600) / 60);
+  if (d) return `${d} ${d === 1 ? 'día' : 'días'} ${h} h`;
+  if (h) return `${h} h ${m} min`;
+  return `${m} min`;
+}

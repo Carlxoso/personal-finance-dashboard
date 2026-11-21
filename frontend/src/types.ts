@@ -1,6 +1,6 @@
 export type Role = 'ADMIN' | 'USER';
 export interface User { id: string; email: string; name: string | null; role: Role; mustChangePassword: boolean }
-export interface AdminUser extends User { createdAt: string; active: boolean }
+export interface AdminUser extends User { createdAt: string; active: boolean; lastLoginAt: string | null }
 export interface Notice { id: string; kind: 'success' | 'warning'; message: string }
 /** Los montos viajan como string decimal ("12.50"), nunca como float. */
 export interface PeriodSummary {
@@ -31,3 +31,8 @@ export interface AuditEntry {
   ip: string | null; userAgent: string | null; details: Record<string, unknown> | null;
 }
 export interface AuditSummary { events24h: number; failed24h: number; denied7d: number; admin7d: number; topFailed: { email: string; count: number }[] }
+export interface AdminSummary {
+  users: { total: number; active: number; inactive: number; admins: number; pendingPassword: number; active7d: number; newThisMonth: number; stale: number; neverLoggedIn: number };
+  signupsByMonth: { month: string; count: number }[];
+  system: { dbOk: boolean; latencyMs: number; uptimeSeconds: number; serverTime: string };
+}

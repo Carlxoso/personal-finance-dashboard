@@ -36,6 +36,7 @@ model User {
   tokenVersion Int           @default(0)
   mustChangePassword Boolean @default(false)
   createdAt    DateTime      @default(now())
+  lastLoginAt  DateTime?
   accounts     Account[]
   categories   Category[]
   goals        Goal[]
