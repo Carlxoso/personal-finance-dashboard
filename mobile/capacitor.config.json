@@ -1,0 +1,17 @@
+{
+  "appId": "com.carlosmoreira.finanzas",
+  "appName": "Finanzas",
+  "webDir": "www",
+  "server": {
+    "url": "https://personal-finance-dashboard-ten-xi.vercel.app/",
+    "errorPath": "offline.html"
+  },
+  "android": {
+    "backgroundColor": "#ffffff"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native"
+    }
+  }
+}

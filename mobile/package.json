@@ -1,0 +1,20 @@
+{
+  "name": "finanzas-mobile",
+  "private": true,
+  "description": "App Android de Finanzas (Capacitor). Abre la versión web publicada dentro de una app nativa.",
+  "type": "module",
+  "scripts": {
+    "setup": "node scripts/android.mjs check && cap add android && node scripts/android.mjs apply && cap sync android",
+    "sync": "node scripts/android.mjs apply && cap sync android",
+    "open": "cap open android",
+    "apk": "node scripts/apk.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
+  }
+}

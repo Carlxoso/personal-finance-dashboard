@@ -28,6 +28,7 @@ Aplicación web para llevar las finanzas personales: cuentas, ingresos, gastos, 
 ```
 backend/    API REST, modelo de datos (Prisma) y pruebas
 frontend/   Interfaz en React
+mobile/     App Android (Capacitor) con ícono y splash
 ```
 
 ## Propiedad
