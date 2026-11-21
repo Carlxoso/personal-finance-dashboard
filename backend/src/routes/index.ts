@@ -8,13 +8,14 @@ import * as reports from '../services/report.service.js';
 import * as notifications from '../services/notification.service.js';
 import * as accounts from '../services/account.service.js';
 import * as adminUsers from '../services/admin.service.js';
+import * as audit from '../services/audit.service.js';
 import * as auth from '../services/auth.service.js';
 import { accountBalances } from '../services/balance.service.js';
 import { monthlySeries, periodSummary } from '../services/statistics.service.js';
 import * as categories from '../services/category.service.js';
 import * as goals from '../services/goal.service.js';
 import * as tx from '../services/transaction.service.js';
-import { accountInput, categoryInput, credentials, profileInput, registerInput, adminPasswordInput, activeInput, reportQuery, goalInput, idParam, monthsQuery, passwordInput, periodQuery, txInput, txQuery } from '../validation/schemas.js';
+import { accountInput, categoryInput, credentials, profileInput, registerInput, adminPasswordInput, activeInput, auditQuery, reportQuery, goalInput, idParam, monthsQuery, passwordInput, periodQuery, txInput, txQuery } from '../validation/schemas.js';
 
 const api = Router();
 // Cookie HttpOnly + SameSite=Strict + CORS restringido cubren CSRF.
@@ -26,14 +27,28 @@ api.get('/auth/status', async (_req, res) => { res.json({ registrationOpen: (awa
 api.post('/auth/register', authLimit, async (req, res) => {
   const { email, password, name } = registerInput.parse(req.body);
   const { user, tv } = await auth.register(email, password, name);
+  await audit.record(audit.contextOf(req), { action: 'ADMIN_REGISTERED', actorId: user.id, actorEmail: user.email });
   setSession(res, user.id, tv).status(201).json(user);
 });
 api.post('/auth/login', authLimit, async (req, res) => {
   const { email, password } = credentials.parse(req.body);
-  const { user, tv } = await auth.login(email, password);
-  setSession(res, user.id, tv).json(user);
+  const ctx = audit.contextOf(req);
+  try {
+    const { user, tv } = await auth.login(email, password);
+    await audit.record(ctx, { action: 'LOGIN_SUCCESS', actorId: user.id, actorEmail: user.email });
+    setSession(res, user.id, tv).json(user);
+  } catch (err) {
+    if (err instanceof auth.LoginError) {
+      await audit.record(ctx, { action: 'LOGIN_FAILED', actorId: err.userId, actorEmail: email, details: { reason: err.reason } });
+    }
+    throw err;
+  }
 });
-api.post('/auth/logout', async (req, res) => { await auth.logout(req.cookies?.token); res.clearCookie('token').status(204).end(); });
+api.post('/auth/logout', async (req, res) => {
+  const userId = await auth.logout(req.cookies?.token);
+  if (userId) await audit.record(audit.contextOf(req), { action: 'LOGOUT', actorId: userId });
+  res.clearCookie('token').status(204).end();
+});
 
 api.use(requireAuth);
 api.get('/auth/me', async (req, res) => {
@@ -42,20 +57,42 @@ api.get('/auth/me', async (req, res) => {
   res.json(user);
 });
 
-api.patch('/auth/me', async (req, res) => { res.json(await auth.updateProfile(req.userId, profileInput.parse(req.body))); });
+api.patch('/auth/me', async (req, res) => {
+  const before = await prisma.user.findUnique({ where: { id: req.userId }, select: { email: true, name: true } });
+  const user = await auth.updateProfile(req.userId, profileInput.parse(req.body));
+  const changed = (['name', 'email'] as const).filter((k) => before?.[k] !== user[k]);
+  if (changed.length) {
+    await audit.record(audit.contextOf(req), {
+      action: 'PROFILE_UPDATED', actorId: user.id, actorEmail: user.email,
+      details: { changed, ...(changed.includes('email') && { previousEmail: before?.email ?? null }) },
+    });
+  }
+  res.json(user);
+});
 api.get('/notifications', async (req, res) => { res.json(await notifications.listNotifications(req.userId)); });
 const admin = Router();
 admin.use(requireRole('ADMIN'));
 admin.get('/users', async (_req, res) => { res.json(await adminUsers.listUsers()); });
-admin.post('/users', async (req, res) => { res.status(201).json(await auth.createUser({ ...registerInput.parse(req.body), role: 'USER', mustChange: true })); });
+admin.post('/users', async (req, res) => {
+  const user = await auth.createUser({ ...registerInput.parse(req.body), role: 'USER', mustChange: true });
+  await audit.record(audit.contextOf(req), { action: 'USER_CREATED', actorId: req.userId, targetId: user.id, targetEmail: user.email, details: { role: user.role } });
+  res.status(201).json(user);
+});
 admin.post('/users/:id/password', async (req, res) => {
-  await adminUsers.resetPassword(idParam.parse(req.params).id, adminPasswordInput.parse(req.body).password);
+  const { id } = idParam.parse(req.params);
+  await adminUsers.resetPassword(id, adminPasswordInput.parse(req.body).password);
+  await audit.record(audit.contextOf(req), { action: 'USER_PASSWORD_RESET', actorId: req.userId, targetId: id });
   res.status(204).end();
 });
 admin.patch('/users/:id', async (req, res) => {
-  await adminUsers.setActive(req.userId, idParam.parse(req.params).id, activeInput.parse(req.body).active);
+  const { id } = idParam.parse(req.params);
+  const { active } = activeInput.parse(req.body);
+  await adminUsers.setActive(req.userId, id, active);
+  await audit.record(audit.contextOf(req), { action: active ? 'USER_ACTIVATED' : 'USER_DEACTIVATED', actorId: req.userId, targetId: id });
   res.status(204).end();
 });
+admin.get('/audit', async (req, res) => { res.json(await audit.listAudit(auditQuery.parse(req.query))); });
+admin.get('/audit/summary', async (_req, res) => { res.json(await audit.auditSummary()); });
 api.use('/admin', admin);
 
 api.get('/accounts', async (req, res) => { res.json(await accountBalances(req.userId)); });
@@ -67,6 +104,7 @@ api.get('/categories', async (req, res) => { res.json(await prisma.category.find
 api.post('/auth/password', authLimit, async (req, res) => {
   const { current, next } = passwordInput.parse(req.body);
   const tv = await auth.changePassword(req.userId, current, next);
+  await audit.record(audit.contextOf(req), { action: 'PASSWORD_CHANGED', actorId: req.userId });
   setSession(res, req.userId, tv).status(204).end();
 });
 api.post('/categories', async (req, res) => { res.status(201).json(await categories.createCategory(req.userId, categoryInput.parse(req.body))); });

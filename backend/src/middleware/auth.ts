@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { AppError } from '../lib/errors.js';
 import { prisma } from '../lib/prisma.js';
+import { contextOf, record } from '../services/audit.service.js';
 
 declare global { namespace Express { interface Request { userId: string } } }
 
@@ -29,5 +30,8 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
 
 export const requireRole = (role: Role) => async (req: Request, _res: Response, next: NextFunction) => {
   const user = await prisma.user.findUnique({ where: { id: req.userId }, select: { role: true } });
-  next(user?.role === role ? undefined : new AppError(403, 'FORBIDDEN', 'No tienes permiso para esto'));
+  if (user?.role === role) return next();
+  // Un usuario sin permiso intentando entrar a rutas de administración queda registrado.
+  await record(contextOf(req), { action: 'ACCESS_DENIED', actorId: req.userId, details: { method: req.method, path: req.originalUrl.split('?')[0]! } });
+  next(new AppError(403, 'FORBIDDEN', 'No tienes permiso para esto'));
 };

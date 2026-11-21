@@ -7,5 +7,5 @@ if (!url || !/test/i.test(new URL(url).pathname)) {
   throw new Error('DATABASE_URL debe apuntar a una base de pruebas (su nombre debe contener "test"). Revisa backend/.env.test');
 }
 
-beforeEach(async () => { await prisma.$executeRawUnsafe('TRUNCATE "User", "Account", "Category", "Goal", "Transaction" CASCADE'); });
+beforeEach(async () => { await prisma.$executeRawUnsafe('TRUNCATE "User", "Account", "Category", "Goal", "Transaction", "AuditLog" CASCADE'); });
 afterAll(async () => { await prisma.$disconnect(); });

@@ -4,7 +4,7 @@ import type { SectionId } from '../components/Sidebar';
 // Ruta visible en la barra de direcciones para cada sección: /#/gastos, /#/metas…
 const SLUGS: Record<SectionId, string> = {
   dashboard: 'dashboard', accounts: 'cuentas', income: 'ingresos', expenses: 'gastos', savings: 'ahorros',
-  goals: 'metas', history: 'historial', stats: 'estadisticas', reports: 'reportes', users: 'usuarios',
+  goals: 'metas', history: 'historial', stats: 'estadisticas', reports: 'reportes', users: 'usuarios', audit: 'bitacora',
   settings: 'configuracion', profile: 'perfil',
 };
 const BY_SLUG = Object.fromEntries(Object.entries(SLUGS).map(([id, slug]) => [slug, id])) as Record<string, SectionId>;

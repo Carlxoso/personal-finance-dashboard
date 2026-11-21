@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { FadeIn } from './components/FadeIn';
 import { Header } from './components/Header';
 import { LoadingScreen } from './components/LoadingScreen';
-import { Sidebar } from './components/Sidebar';
+import { ADMIN_ONLY, Sidebar } from './components/Sidebar';
 import { VersionTag } from './components/VersionTag';
 import { useHashSection } from './hooks/useHashSection';
 import { clearCache } from './hooks/useLoad';
 import { api } from './lib/api';
 import { wait } from './lib/wait';
 import Accounts from './pages/Accounts';
+import Audit from './pages/Audit';
 import ChangePassword from './pages/ChangePassword';
 import Dashboard from './pages/Dashboard';
 import Goals from './pages/Goals';
@@ -36,8 +37,8 @@ export default function App() {
   if (user === undefined || loggingOut) return <LoadingScreen label={loggingOut ? 'Cerrando sesión…' : undefined} />;
   if (!user) return <Login onDone={(u) => { clearCache(); setUser(u); }} />;
   if (user.mustChangePassword) return <ChangePassword onDone={setUser} onLogout={logout} />;
-  // La sección de usuarios es solo para administradores, aunque alguien escriba la URL a mano.
-  const section = route === 'users' && user.role !== 'ADMIN' ? 'dashboard' : route;
+  // Las secciones de administración solo se muestran a administradores, aunque alguien escriba la URL a mano.
+  const section = ADMIN_ONLY.includes(route) && user.role !== 'ADMIN' ? 'dashboard' : route;
   return (
     <FadeIn>
       <Sidebar active={section} role={user.role} onSelect={setSection} onLogout={logout} />
@@ -52,6 +53,7 @@ export default function App() {
         {section === 'stats' && <Statistics />}
         {section === 'reports' && <Reports user={user} />}
         {section === 'users' && user.role === 'ADMIN' && <Users meId={user.id} />}
+        {section === 'audit' && user.role === 'ADMIN' && <Audit />}
         {section === 'settings' && <Settings />}
         {section === 'profile' && <Profile user={user} onUpdated={setUser} />}
         {section === 'history' && <Transactions key="history" title="Historial" />}

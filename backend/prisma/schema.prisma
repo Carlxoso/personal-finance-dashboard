@@ -98,3 +98,36 @@ model Transaction {
   createdAt   DateTime  @default(now())
   @@index([userId, date])
 }
+
+/// Bitácora de seguridad y administración. Solo eventos de acceso y gestión de usuarios:
+/// nunca montos, movimientos ni contraseñas. Sin llaves foráneas a propósito, para que
+/// el registro sobreviva aunque el usuario cambie de correo o se elimine.
+enum AuditAction {
+  ADMIN_REGISTERED
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  PASSWORD_CHANGED
+  PROFILE_UPDATED
+  USER_CREATED
+  USER_PASSWORD_RESET
+  USER_ACTIVATED
+  USER_DEACTIVATED
+  ACCESS_DENIED
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  createdAt   DateTime    @default(now())
+  action      AuditAction
+  actorId     String?
+  actorEmail  String?
+  targetId    String?
+  targetEmail String?
+  ip          String?
+  userAgent   String?
+  details     Json?
+  @@index([createdAt])
+  @@index([action, createdAt])
+  @@index([actorId, createdAt])
+}

@@ -1,4 +1,4 @@
-import { BarChart3, FileText, History, Landmark, LayoutDashboard, LogOut, Menu, PiggyBank, Settings, Target, TrendingDown, TrendingUp, Users, X } from 'lucide-react';
+import { BarChart3, FileText, History, Landmark, LayoutDashboard, LogOut, Menu, PiggyBank, ScrollText, Settings, Target, TrendingDown, TrendingUp, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Role } from '../types';
 
@@ -14,6 +14,7 @@ export const NAV = [
   { id: 'stats', label: 'Estadísticas', icon: BarChart3 },
   { id: 'reports', label: 'Reportes', icon: FileText },
   { id: 'users', label: 'Usuarios', icon: Users },
+  { id: 'audit', label: 'Bitácora', icon: ScrollText },
   { id: 'settings', label: 'Configuración', icon: Settings },
 ] as const;
 
@@ -21,8 +22,8 @@ type NavId = (typeof NAV)[number]['id'];
 export type SectionId = NavId | 'profile';
 
 // Cada grupo se separa con una línea horizontal.
-const GROUPS: NavId[][] = [['dashboard', 'accounts'], ['income', 'expenses', 'savings', 'goals', 'history'], ['stats', 'reports', 'users']];
-const ADMIN_ONLY: NavId[] = ['users'];
+const GROUPS: NavId[][] = [['dashboard', 'accounts'], ['income', 'expenses', 'savings', 'goals', 'history'], ['stats', 'reports', 'users', 'audit']];
+export const ADMIN_ONLY: SectionId[] = ['users', 'audit'];
 const button = 'flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-[15px] transition';
 
 export function Sidebar({ active, role, onSelect, onLogout }: { active: SectionId; role: Role; onSelect: (id: SectionId) => void; onLogout: () => void }) {

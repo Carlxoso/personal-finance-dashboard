@@ -21,6 +21,7 @@ Aplicación web para llevar las finanzas personales: cuentas, ingresos, gastos, 
 - Estadísticas y gráficos por período
 - Reportes en PDF y exportación a CSV
 - Notificaciones de saldo y metas
+- Bitácora de seguridad para el administrador (accesos, intentos fallidos y acciones sobre usuarios)
 
 ## Estructura
 

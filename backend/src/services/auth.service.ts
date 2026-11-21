@@ -27,20 +27,30 @@ export async function register(email: string, password: string, name: string) {
   return { user: await createUser({ email, password, name, role: 'ADMIN' }), tv: 0 };
 }
 
+/** Error de ingreso: al cliente siempre le llega el mismo mensaje; el motivo real solo va a la bitácora. */
+export class LoginError extends AppError {
+  constructor(public reason: 'UNKNOWN_EMAIL' | 'WRONG_PASSWORD' | 'INACTIVE', public userId?: string) {
+    super(401, 'INVALID_CREDENTIALS', 'Correo o contraseña incorrectos');
+  }
+}
+
 export async function login(email: string, password: string) {
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !user.active || !(await argon2.verify(user.passwordHash, password))) throw new AppError(401, 'INVALID_CREDENTIALS', 'Correo o contraseña incorrectos');
+  if (!user) throw new LoginError('UNKNOWN_EMAIL');
+  if (!(await argon2.verify(user.passwordHash, password))) throw new LoginError('WRONG_PASSWORD', user.id);
+  if (!user.active) throw new LoginError('INACTIVE', user.id);
   return { user: { id: user.id, email: user.email, name: user.name, role: user.role, mustChangePassword: user.mustChangePassword }, tv: user.tokenVersion };
 }
 
 export const signToken = (userId: string, tv: number) => jwt.sign({ tv }, env.JWT_SECRET, { subject: userId, expiresIn: '7d' });
 
-/** Cerrar sesión invalida todos los tokens emitidos a ese usuario. */
+/** Cerrar sesión invalida todos los tokens emitidos a ese usuario. Devuelve su id si la sesión era válida. */
 export async function logout(token?: string) {
   try {
     const { sub } = jwt.verify(token ?? '', env.JWT_SECRET) as jwt.JwtPayload;
     if (sub) await prisma.user.updateMany({ where: { id: sub }, data: { tokenVersion: { increment: 1 } } });
-  } catch { /* sin sesión válida no hay nada que invalidar */ }
+    return sub;
+  } catch { return undefined; /* sin sesión válida no hay nada que invalidar */ }
 }
 
 export async function updateProfile(userId: string, d: { name: string; email: string }) {

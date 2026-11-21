@@ -48,3 +48,11 @@ export const adminPasswordInput = z.object({ password: z.string().min(10).max(12
 export const activeInput = z.object({ active: z.boolean() });
 
 export const reportQuery = periodQuery.extend({ label: z.string().max(40).default('') });
+
+const AUDIT_ACTIONS = ['ADMIN_REGISTERED', 'LOGIN_SUCCESS', 'LOGIN_FAILED', 'LOGOUT', 'PASSWORD_CHANGED', 'PROFILE_UPDATED',
+  'USER_CREATED', 'USER_PASSWORD_RESET', 'USER_ACTIVATED', 'USER_DEACTIVATED', 'ACCESS_DENIED'] as const;
+export const auditQuery = z.object({
+  action: z.enum(AUDIT_ACTIONS).optional(), search: z.string().trim().max(120).optional(),
+  from: z.coerce.date().optional(), to: z.coerce.date().optional(),
+  page: z.coerce.number().int().min(1).default(1), pageSize: z.coerce.number().int().min(1).max(100).default(25),
+});
