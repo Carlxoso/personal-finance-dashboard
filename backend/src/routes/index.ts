@@ -15,7 +15,7 @@ import { monthlySeries, periodSummary } from '../services/statistics.service.js'
 import * as categories from '../services/category.service.js';
 import * as goals from '../services/goal.service.js';
 import * as tx from '../services/transaction.service.js';
-import { accountInput, categoryInput, credentials, profileInput, registerInput, adminPasswordInput, activeInput, auditQuery, reportQuery, goalInput, idParam, monthsQuery, passwordInput, periodQuery, txInput, txQuery } from '../validation/schemas.js';
+import { accountInput, categoryInput, credentials, profileInput, registerInput, adminPasswordInput, activeInput, auditQuery, deleteUserInput, reportQuery, goalInput, idParam, monthsQuery, passwordInput, periodQuery, txInput, txQuery } from '../validation/schemas.js';
 
 const api = Router();
 // Cookie HttpOnly + SameSite=Strict + CORS restringido cubren CSRF.
@@ -91,6 +91,12 @@ admin.patch('/users/:id', async (req, res) => {
   await adminUsers.setActive(req.userId, id, active);
   await audit.record(audit.contextOf(req), { action: active ? 'USER_ACTIVATED' : 'USER_DEACTIVATED', actorId: req.userId, targetId: id });
   res.status(204).end();
+});
+admin.delete('/users/:id', async (req, res) => {
+  const { id } = idParam.parse(req.params);
+  const { email, removed } = await adminUsers.deleteUser(req.userId, id, deleteUserInput.parse(req.body ?? {}).confirmEmail);
+  await audit.record(audit.contextOf(req), { action: 'USER_DELETED', actorId: req.userId, targetId: id, targetEmail: email, details: { removed } });
+  res.json({ removed });
 });
 admin.get('/audit', async (req, res) => { res.json(await audit.listAudit(auditQuery.parse(req.query))); });
 admin.get('/audit/summary', async (_req, res) => { res.json(await audit.auditSummary()); });

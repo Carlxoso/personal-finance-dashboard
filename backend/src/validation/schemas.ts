@@ -46,11 +46,12 @@ export const profileInput = z.object({ name: z.string().trim().min(1).max(60), e
 
 export const adminPasswordInput = z.object({ password: z.string().min(10).max(128) });
 export const activeInput = z.object({ active: z.boolean() });
+export const deleteUserInput = z.object({ confirmEmail: z.string().min(1).max(120) });
 
 export const reportQuery = periodQuery.extend({ label: z.string().max(40).default('') });
 
 const AUDIT_ACTIONS = ['ADMIN_REGISTERED', 'LOGIN_SUCCESS', 'LOGIN_FAILED', 'LOGOUT', 'PASSWORD_CHANGED', 'PROFILE_UPDATED',
-  'USER_CREATED', 'USER_PASSWORD_RESET', 'USER_ACTIVATED', 'USER_DEACTIVATED', 'ACCESS_DENIED'] as const;
+  'USER_CREATED', 'USER_PASSWORD_RESET', 'USER_ACTIVATED', 'USER_DEACTIVATED', 'USER_DELETED', 'ACCESS_DENIED'] as const;
 export const auditQuery = z.object({
   action: z.enum(AUDIT_ACTIONS).optional(), search: z.string().trim().max(120).optional(),
   from: z.coerce.date().optional(), to: z.coerce.date().optional(),

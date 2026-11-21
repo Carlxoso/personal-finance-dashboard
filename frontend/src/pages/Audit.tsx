@@ -1,5 +1,5 @@
 import {
-  Activity, KeyRound, LogIn, LogOut, RefreshCw, ShieldAlert, ShieldCheck, ShieldX, UserCheck, UserCog, UserPlus, UserX, type LucideIcon,
+  Activity, KeyRound, LogIn, LogOut, RefreshCw, ShieldAlert, ShieldCheck, ShieldX, Trash2, UserCheck, UserCog, UserPlus, UserX, type LucideIcon,
 } from 'lucide-react';
 import { useState, type ChangeEvent } from 'react';
 import { Field, inputClass, secondaryButton } from '../components/Field';
@@ -22,6 +22,7 @@ const ACTIONS: Record<AuditAction, { label: string; icon: LucideIcon; tone: Tone
   USER_PASSWORD_RESET: { label: 'Clave restablecida', icon: KeyRound, tone: 'admin' },
   USER_ACTIVATED: { label: 'Usuario activado', icon: UserCheck, tone: 'admin' },
   USER_DEACTIVATED: { label: 'Usuario desactivado', icon: UserX, tone: 'alert' },
+  USER_DELETED: { label: 'Usuario eliminado', icon: Trash2, tone: 'alert' },
   ACCESS_DENIED: { label: 'Acceso denegado', icon: ShieldX, tone: 'alert' },
   ADMIN_REGISTERED: { label: 'Alta del administrador', icon: ShieldCheck, tone: 'ok' },
 };
@@ -50,6 +51,10 @@ function describe(e: AuditEntry): { text: string; note?: string } {
     case 'USER_PASSWORD_RESET': return { text: `${who} restableció la clave de ${target}` };
     case 'USER_ACTIVATED': return { text: `${who} activó a ${target}` };
     case 'USER_DEACTIVATED': return { text: `${who} desactivó a ${target}` };
+    case 'USER_DELETED': {
+      const r = (d.removed ?? {}) as { transactions?: number; accounts?: number; goals?: number };
+      return { text: `${who} eliminó permanentemente a ${target}`, note: `${r.transactions ?? 0} movimientos, ${r.accounts ?? 0} cuentas, ${r.goals ?? 0} metas` };
+    }
     case 'ACCESS_DENIED': return { text: `${who} intentó entrar a una sección de administración`, note: d.path ? String(d.path) : undefined };
   }
 }

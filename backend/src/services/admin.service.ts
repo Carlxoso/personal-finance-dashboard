@@ -10,6 +10,28 @@ export async function resetPassword(userId: string, password: string) {
   if (!r.count) throw notFound();
 }
 
+/**
+ * Elimina un usuario y TODOS sus datos (cuentas, movimientos, metas y categorías). No se puede deshacer.
+ * Exige escribir el correo exacto como confirmación, también en el servidor.
+ * Los movimientos se borran primero porque su relación con la cuenta es RESTRICT.
+ */
+export async function deleteUser(adminId: string, userId: string, confirmEmail: string) {
+  if (adminId === userId) throw new AppError(400, 'SELF', 'No puedes eliminar tu propia cuenta');
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, role: true } });
+  if (!user) throw notFound();
+  if (user.role === 'ADMIN') throw new AppError(400, 'ADMIN_PROTECTED', 'No se puede eliminar a un administrador');
+  if (confirmEmail.trim().toLowerCase() !== user.email) throw new AppError(400, 'CONFIRMATION_MISMATCH', 'El correo de confirmación no coincide');
+
+  const [transactions, accounts, goals] = await prisma.$transaction([
+    prisma.transaction.deleteMany({ where: { userId } }),
+    prisma.account.count({ where: { userId } }),
+    prisma.goal.count({ where: { userId } }),
+    prisma.user.delete({ where: { id: userId } }),   // cascada: cuentas, categorías y metas
+  ]);
+  // Solo cantidades para la bitácora, nunca montos.
+  return { email: user.email, removed: { transactions: transactions.count, accounts, goals } };
+}
+
 export async function setActive(adminId: string, userId: string, active: boolean) {
   if (adminId === userId) throw new AppError(400, 'SELF', 'No puedes desactivar tu propia cuenta');
   const r = await prisma.user.updateMany({ where: { id: userId }, data: { active, tokenVersion: { increment: 1 } } });

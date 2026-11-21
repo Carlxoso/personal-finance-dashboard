@@ -24,7 +24,7 @@ export interface Goal {
 export interface MonthPoint { month: string; income: string; expense: string; saving: string; balance: string }
 
 export type AuditAction = 'ADMIN_REGISTERED' | 'LOGIN_SUCCESS' | 'LOGIN_FAILED' | 'LOGOUT' | 'PASSWORD_CHANGED' | 'PROFILE_UPDATED'
-  | 'USER_CREATED' | 'USER_PASSWORD_RESET' | 'USER_ACTIVATED' | 'USER_DEACTIVATED' | 'ACCESS_DENIED';
+  | 'USER_CREATED' | 'USER_PASSWORD_RESET' | 'USER_ACTIVATED' | 'USER_DEACTIVATED' | 'USER_DELETED' | 'ACCESS_DENIED';
 export interface AuditEntry {
   id: string; createdAt: string; action: AuditAction;
   actorId: string | null; actorEmail: string | null; targetId: string | null; targetEmail: string | null;
